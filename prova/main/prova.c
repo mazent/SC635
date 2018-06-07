@@ -144,7 +144,7 @@ esp_err_t print_what_saved(void)
 }
 
 
-void app_main()
+void app_main_()
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -180,4 +180,12 @@ void app_main()
         }
         vTaskDelay(200 / portTICK_PERIOD_MS);
     }
+}
+
+void app_main()
+{
+	while (true) {
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	}
+
 }
