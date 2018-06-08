@@ -6,4 +6,4 @@ phy_init, data, phy,     0xF000,    4K
 factory,  app,  factory, 0x10000,   1M
 ota,      app,  ota_0,   ,          1M
 # Parte privata
-prod,     data, nvs,     0x210000,  4K
+prod,     data, nvs,     ,          4K
