@@ -1,6 +1,8 @@
 #ifndef PROD_H_
 #define PROD_H_
 
+#include "bsp.h"
+
 /*
  * Accesso ai parametri della produzione
  */

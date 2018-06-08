@@ -5,5 +5,7 @@
 
 PROJECT_NAME := prova
 
+EXTRA_COMPONENT_DIRS := $(abspath ../bsp)
+
 include $(IDF_PATH)/make/project.mk
 

@@ -3,6 +3,7 @@
 
 #include "esp_system.h"
 #include "nvs.h"
+#include "nvs_flash.h"
 
 // cfr sc635.csv
 #define PARTITION		"prod"
@@ -33,9 +34,9 @@ static bool init(void)
 
 	        // Retry nvs_flash_init
 	        err = nvs_flash_init_partition(PARTITION) ;
-	        inited = err == ESP_OK ;
 #endif
 	    }
+        inited = err == ESP_OK ;
 
 	} while (false) ;
 
