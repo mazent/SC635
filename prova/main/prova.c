@@ -1,9 +1,13 @@
 #include "cmsis_os.h"
 
 #include "prod.h"
+#include "led.h"
 
 void app_main()
 {
+#if 1
+	LED_begin() ;
+#else
 	while (true) {
 		PROD_BSN bsn = { 0 } ;
 
@@ -14,4 +18,5 @@ void app_main()
 
 		(void) osDelay(1000) ;
 	}
+#endif
 }

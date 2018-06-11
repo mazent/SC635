@@ -9,6 +9,8 @@
 // Per le PRIu32 ecc
 #include <inttypes.h>
 
+#include "cmsis_os.h"
+
 // Questi mancano
 // ==========================================
 

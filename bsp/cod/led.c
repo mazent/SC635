@@ -1,9 +1,12 @@
 #include "bsp.h"
 #include "led.h"
 
-#define LED_R_Vneg		4
+#include "driver/gpio.h"
+
+#define LED_R_Vneg		GPIO_NUM_2
 
 static osThreadId tid = NULL ;
+static int lev = 0 ;
 
 #define RIPOSO_MS		1000
 
@@ -16,8 +19,11 @@ static void led(const void * v)
 	while (true) {
 		osEvent evn = osSignalWait(0, RIPOSO_MS) ;
 
-		if (osEventTimeout == evn.status)
-			gpio_set_level(LED_R_Vneg, gpio_get_level(LED_R_Vneg));
+		if (osEventTimeout == evn.status) {
+			int curlev = gpio_get_level(LED_R_Vneg) ;
+			lev = 0 == lev ? 1 : 0 ;
+			gpio_set_level(LED_R_Vneg, lev) ;
+		}
 		else if (SIG_QUIT & evn.value.signals)
 			break ;
 	}
@@ -33,8 +39,9 @@ void LED_begin(void)
 	    gpio_pad_select_gpio(LED_R_Vneg) ;
 
 	    gpio_set_direction(LED_R_Vneg, GPIO_MODE_OUTPUT);
+	    gpio_set_level(LED_R_Vneg, lev) ;
 
-	    osThreadDef(led, osPriorityNormal, 1, 500) ;
+	    osThreadDef(led, osPriorityNormal, 1, 1000) ;
 	    tid = osThreadCreate(osThread(led), NULL) ;
 	}
 }

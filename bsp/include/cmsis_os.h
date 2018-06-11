@@ -404,7 +404,8 @@ osStatus osTimerDelete (osTimerId timer_id) ;
 /// \param[in]     signals       specifies the signal flags of the thread that should be set.
 /// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
 /// \note MUST REMAIN UNCHANGED: \b osSignalSet shall be consistent in every CMSIS-RTOS.
-int32_t osSignalSet (osThreadId thread_id, int32_t signals) ;
+//int32_t osSignalSet (osThreadId thread_id, int32_t signals) ;
+osStatus osSignalSet(osThreadId thread_id, int32_t signal) ;
 
 /// Clear the specified Signal Flags of an active thread.
 /// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
