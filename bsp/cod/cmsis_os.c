@@ -30,6 +30,22 @@ static TickType_t ms_in_tick(uint32_t millisec)
 	return ticks ;
 }
 
+static unsigned portBASE_TYPE freeRtos_pri(osPriority priority)
+{
+	assert(configMAX_PRIORITIES >= 7) ;
+
+	switch (priority) {
+	case osPriorityIdle:		return tskIDLE_PRIORITY ;
+	case osPriorityLow:			return tskIDLE_PRIORITY + 1 ;
+	case osPriorityBelowNormal: return tskIDLE_PRIORITY + 2 ;
+	case osPriorityNormal:      return tskIDLE_PRIORITY + 3 ;
+	case osPriorityAboveNormal: return tskIDLE_PRIORITY + 4 ;
+	case osPriorityHigh:        return tskIDLE_PRIORITY + 5 ;
+	case osPriorityRealtime:    return tskIDLE_PRIORITY + 6 ;
+	default:					return tskIDLE_PRIORITY ;
+	}
+}
+
 
 //  ==== Kernel Control Functions ====
 
@@ -68,24 +84,36 @@ static TickType_t ms_in_tick(uint32_t millisec)
 
 //  ==== Thread Management ====
 
-///// Create a thread and add it to Active Threads and set it to state READY.
-///// \param[in]     thread_def    thread definition referenced with \ref osThread.
-///// \param[in]     argument      pointer that is passed to the thread function as start argument.
-///// \return thread ID for reference by other functions or NULL in case of error.
-///// \note MUST REMAIN UNCHANGED: \b osThreadCreate shall be consistent in every CMSIS-RTOS.
-//osThreadId osThreadCreate (const osThreadDef_t *thread_def, void *argument);
-//
+osThreadId osThreadCreate(const osThreadDef_t * td, void * argument)
+{
+	TaskHandle_t handle ;
+
+	if (xTaskCreate(td->pthread,
+					td->nome,
+	                (td->stacksize + sizeof(portSTACK_TYPE) - 1) / sizeof(portSTACK_TYPE),
+	                argument,
+	                freeRtos_pri(td->tpriority),
+	                &handle) != pdPASS) {
+	    return NULL ;
+	}
+
+	return handle ;
+}
+
 ///// Return the thread ID of the current running thread.
 ///// \return thread ID for reference by other functions or NULL in case of error.
 ///// \note MUST REMAIN UNCHANGED: \b osThreadGetId shall be consistent in every CMSIS-RTOS.
 //osThreadId osThreadGetId (void);
-//
-///// Terminate execution of a thread and remove it from Active Threads.
-///// \param[in]     thread_id   thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-///// \return status code that indicates the execution status of the function.
-///// \note MUST REMAIN UNCHANGED: \b osThreadTerminate shall be consistent in every CMSIS-RTOS.
-//osStatus osThreadTerminate (osThreadId thread_id);
-//
+
+#if (INCLUDE_vTaskDelete == 1)
+osStatus osThreadTerminate(osThreadId thread_id)
+{
+    vTaskDelete(thread_id) ;
+
+    return osOK ;
+}
+#endif
+
 ///// Pass control to next thread that is in state \b READY.
 ///// \return status code that indicates the execution status of the function.
 ///// \note MUST REMAIN UNCHANGED: \b osThreadYield shall be consistent in every CMSIS-RTOS.
@@ -157,26 +185,58 @@ osStatus osDelay(uint32_t millisec)
 
 //  ==== Signal Management ====
 
-///// Set the specified Signal Flags of an active thread.
-///// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-///// \param[in]     signals       specifies the signal flags of the thread that should be set.
-///// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters.
-///// \note MUST REMAIN UNCHANGED: \b osSignalSet shall be consistent in every CMSIS-RTOS.
-//int32_t osSignalSet (osThreadId thread_id, int32_t signals);
-//
+osStatus osSignalSet(osThreadId thread_id, int32_t signal)
+{
+	assert(signal >= 0) ;
+
+#if 0
+    if (inHandlerMode()) {
+    	BaseType_t xHigherPriorityTaskWoken = pdFALSE ;
+
+        if (xTaskNotifyFromISR( thread_id, (uint32_t)signal, eSetBits, &xHigherPriorityTaskWoken ) != pdPASS )
+            return osErrorOS ;
+
+        portYIELD_FROM_ISR( xHigherPriorityTaskWoken ) ;
+    }
+    else if (xTaskNotify( thread_id, (uint32_t)signal, eSetBits) != pdPASS )
+        return osErrorOS ;
+#else
+	if ( xTaskNotify(thread_id, (uint32_t) signal, eSetBits) != pdPASS )
+		return osErrorOS ;
+#endif
+    return osOK ;
+}
+
 ///// Clear the specified Signal Flags of an active thread.
 ///// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
 ///// \param[in]     signals       specifies the signal flags of the thread that shall be cleared.
 ///// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters or call from ISR.
 ///// \note MUST REMAIN UNCHANGED: \b osSignalClear shall be consistent in every CMSIS-RTOS.
 //int32_t osSignalClear (osThreadId thread_id, int32_t signals);
-//
-///// Wait for one or more Signal Flags to become signaled for the current \b RUNNING thread.
-///// \param[in]     signals       wait until all specified signal flags set or 0 for any single signal flag.
-///// \param[in]     millisec      \ref CMSIS_RTOS_TimeOutValue or 0 in case of no time-out.
-///// \return event flag information or error code.
-///// \note MUST REMAIN UNCHANGED: \b osSignalWait shall be consistent in every CMSIS-RTOS.
-//osEvent osSignalWait (int32_t signals, uint32_t millisec);
+
+osEvent osSignalWait(int32_t signals, uint32_t millisec)
+{
+	osEvent ret ;
+	TickType_t ticks = ms_in_tick(millisec) ;
+
+	assert(signals >= 0) ;
+
+	if (0 == signals)
+		signals = NEGA(0x80000000) ;
+
+	if (xTaskNotifyWait(
+			0, // ulBitsToClearOnEntry: non cancello niente quando mi metto in attesa
+			(uint32_t) signals,
+			(uint32_t *) &ret.value.signals,
+			ticks) != pdTRUE)
+		ret.status = osEventTimeout ;
+	else if (ret.value.signals < 0)
+		ret.status = osErrorValue ;
+	else
+		ret.status = osEventSignal ;
+
+	return ret ;
+}
 
 
 //  ==== Mutex Management ====
