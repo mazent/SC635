@@ -15,6 +15,8 @@
 
 static bool inited = false ;
 
+static const nvs_handle INVALID_HANDLE = NEGA(0) ;
+
 static bool init(void)
 {
 	do {
@@ -46,7 +48,7 @@ static bool init(void)
 bool PROD_read_board(PROD_BSN * p)
 {
 	bool esito = false ;
-	nvs_handle h ;
+	nvs_handle h = INVALID_HANDLE ;
 
 	do {
 		if (NULL == p)
@@ -63,7 +65,8 @@ bool PROD_read_board(PROD_BSN * p)
 		esito = err == ESP_OK ;
 	} while (false) ;
 
-	nvs_close(h) ;
+	if (INVALID_HANDLE != h)
+		nvs_close(h) ;
 
     return esito ;
 }
@@ -71,7 +74,7 @@ bool PROD_read_board(PROD_BSN * p)
 bool PROD_read_product(PROD_PSN * p)
 {
 	bool esito = false ;
-	nvs_handle h ;
+	nvs_handle h = INVALID_HANDLE ;
 
 	do {
 		if (NULL == p)
@@ -88,7 +91,8 @@ bool PROD_read_product(PROD_PSN * p)
 		esito = err == ESP_OK ;
 	} while (false) ;
 
-	nvs_close(h) ;
+	if (INVALID_HANDLE != h)
+		nvs_close(h) ;
 
     return esito ;
 }
