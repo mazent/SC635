@@ -189,8 +189,7 @@ osStatus osSignalSet(osThreadId thread_id, int32_t signal)
 {
 	assert(signal >= 0) ;
 
-#if 0
-    if (inHandlerMode()) {
+    if ( xPortInIsrContext() ) {
     	BaseType_t xHigherPriorityTaskWoken = pdFALSE ;
 
         if (xTaskNotifyFromISR( thread_id, (uint32_t)signal, eSetBits, &xHigherPriorityTaskWoken ) != pdPASS )
@@ -200,19 +199,9 @@ osStatus osSignalSet(osThreadId thread_id, int32_t signal)
     }
     else if (xTaskNotify( thread_id, (uint32_t)signal, eSetBits) != pdPASS )
         return osErrorOS ;
-#else
-	if ( xTaskNotify(thread_id, (uint32_t) signal, eSetBits) != pdPASS )
-		return osErrorOS ;
-#endif
+
     return osOK ;
 }
-
-///// Clear the specified Signal Flags of an active thread.
-///// \param[in]     thread_id     thread ID obtained by \ref osThreadCreate or \ref osThreadGetId.
-///// \param[in]     signals       specifies the signal flags of the thread that shall be cleared.
-///// \return previous signal flags of the specified thread or 0x80000000 in case of incorrect parameters or call from ISR.
-///// \note MUST REMAIN UNCHANGED: \b osSignalClear shall be consistent in every CMSIS-RTOS.
-//int32_t osSignalClear (osThreadId thread_id, int32_t signals);
 
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
 {
