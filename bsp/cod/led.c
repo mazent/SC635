@@ -3,7 +3,7 @@
 
 #include "driver/gpio.h"
 
-#define LED_R_Vneg		GPIO_NUM_2
+#define LED_R_Vneg		GPIO_NUM_4
 
 static osThreadId tid = NULL ;
 static int lev = 0 ;
