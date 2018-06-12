@@ -1,1 +1,1 @@
-bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp32-wrover.cfg -c "program_esp32 /home/italia.texa.org/cpadovan/Desktop/doip/esp/blink/build/blink.bin 0x10000 verify exit"
+bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp32-wrover.cfg -c "program_esp32 $1 0x10000 verify exit"
