@@ -190,12 +190,10 @@ osStatus osSignalSet(osThreadId thread_id, int32_t signal)
 	assert(signal >= 0) ;
 
     if ( xPortInIsrContext() ) {
-    	BaseType_t xHigherPriorityTaskWoken = pdFALSE ;
-
-        if (xTaskNotifyFromISR( thread_id, (uint32_t)signal, eSetBits, &xHigherPriorityTaskWoken ) != pdPASS )
+        if (xTaskNotifyFromISR( thread_id, (uint32_t)signal, eSetBits, NULL ) != pdPASS )
             return osErrorOS ;
 
-        portYIELD_FROM_ISR( xHigherPriorityTaskWoken ) ;
+        portYIELD_FROM_ISR() ;
     }
     else if (xTaskNotify( thread_id, (uint32_t)signal, eSetBits) != pdPASS )
         return osErrorOS ;

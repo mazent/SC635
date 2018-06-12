@@ -3,6 +3,8 @@
 
 #include "driver/gpio.h"
 
+#include "esp_log.h"
+
 #define LED_R_Vneg		GPIO_NUM_4
 
 static osThreadId tid = NULL ;
@@ -12,7 +14,7 @@ static int lev = 0 ;
 
 #define SIG_QUIT		(1 << 0)
 
-static void led(const void * v)
+static void led(void * v)
 {
 	INUTILE(v) ;
 
@@ -21,8 +23,12 @@ static void led(const void * v)
 
 		if (osEventTimeout == evn.status) {
 			int curlev = gpio_get_level(LED_R_Vneg) ;
+			if (curlev != lev) {
+				ESP_LOGE("LED", "cur %d != %d\n", curlev, lev) ;
+			}
 			lev = 0 == lev ? 1 : 0 ;
 			gpio_set_level(LED_R_Vneg, lev) ;
+			ESP_LOGI("LED", "Imposto %d", lev);
 		}
 		else if (SIG_QUIT & evn.value.signals)
 			break ;
@@ -41,7 +47,7 @@ void LED_begin(void)
 	    gpio_set_direction(LED_R_Vneg, GPIO_MODE_OUTPUT);
 	    gpio_set_level(LED_R_Vneg, lev) ;
 
-	    osThreadDef(led, osPriorityNormal, 1, 1000) ;
+	    osThreadDef(led, osPriorityNormal, 1, 2000) ;
 	    tid = osThreadCreate(osThread(led), NULL) ;
 	}
 }
