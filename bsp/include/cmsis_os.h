@@ -263,7 +263,7 @@ uint32_t osKernelSysTick (void) ;
 /// Convert a microseconds value to a RTOS kernel system timer value.
 /// \param         microsec     time value in microseconds.
 /// \return time value normalized to the \ref osKernelSysTickFrequency
- #define osKernelSysTickMicroSec(microsec) (((uint64_t)microsec * \
+#define osKernelSysTickMicroSec(microsec) (((uint64_t)microsec * \
                                              (osKernelSysTickFrequency)) / \
                                             1000000)
 
@@ -279,10 +279,10 @@ uint32_t osKernelSysTick (void) ;
 /// \note CAN BE CHANGED: The parameters to \b osThreadDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
 #if defined (osObjectsExternal)  // object is external
- #   define osThreadDef(name, priority, instances, stacksz)  \
+#   define osThreadDef(name, priority, instances, stacksz)  \
     extern const osThreadDef_t os_thread_def_ ## name
 #else                            // define the object
- #   define osThreadDef(name, priority, instances, stacksz)  \
+#   define osThreadDef(name, priority, instances, stacksz)  \
     const osThreadDef_t os_thread_def_ ## name = \
     { (name), (priority), (stacksz), #name }
 #endif
@@ -353,20 +353,18 @@ osEvent osWait (uint32_t millisec) ;
 /// \note CAN BE CHANGED: The parameter to \b osTimerDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
 #if defined (osObjectsExternal)  // object is external
- #define osTimerDef(name, function)  \
-    extern const osTimerDef_t os_timer_def_ ## name
+#	define osTimerDef(name, function)  \
+		extern const osTimerDef_t os_timer_def_ ## name
 #else                            // define the object
- #define osTimerDef(name, function)  \
-    const osTimerDef_t os_timer_def_ ## name = \
-    { (function) }
+#	define osTimerDef(name, function)  \
+		const osTimerDef_t os_timer_def_ ## name =  { (function) }
 #endif
 
 /// Access a Timer definition.
 /// \param         name          name of the timer object.
 /// \note CAN BE CHANGED: The parameter to \b osTimer shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
-#define osTimer(name) \
-    & os_timer_def_ ## name
+#define osTimer(name)     & os_timer_def_ ## name
 
 /// Create a timer.
 /// \param[in]     timer_def     timer object referenced with \ref osTimer.
@@ -428,19 +426,18 @@ osEvent osSignalWait (int32_t signals, uint32_t millisec) ;
 /// \note CAN BE CHANGED: The parameter to \b osMutexDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
 #if defined (osObjectsExternal)  // object is external
- #define osMutexDef(name)  \
-    extern const osMutexDef_t os_mutex_def_ ## name
+#	define osMutexDef(name)  \
+		extern const osMutexDef_t os_mutex_def_ ## name
 #else                            // define the object
- #define osMutexDef(name)  \
-    const osMutexDef_t os_mutex_def_ ## name = { 0 }
+#	define osMutexDef(name)  \
+		const osMutexDef_t os_mutex_def_ ## name = { 0 }
 #endif
 
 /// Access a Mutex definition.
 /// \param         name          name of the mutex object.
 /// \note CAN BE CHANGED: The parameter to \b osMutex shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
-#define osMutex(name)  \
-    & os_mutex_def_ ## name
+#define osMutex(name)  	    & os_mutex_def_ ## name
 
 /// Create and Initialize a Mutex object.
 /// \param[in]     mutex_def     mutex definition referenced with \ref osMutex.
@@ -475,20 +472,19 @@ osStatus osMutexDelete (osMutexId mutex_id) ;
 /// \param         name          name of the semaphore object.
 /// \note CAN BE CHANGED: The parameter to \b osSemaphoreDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #if defined (osObjectsExternal) // object is external
-  #define osSemaphoreDef(name)  \
-    extern const osSemaphoreDef_t os_semaphore_def_ ## name
- #else                           // define the object
-  #define osSemaphoreDef(name)  \
-    const osSemaphoreDef_t os_semaphore_def_ ## name = { 0 }
- #endif
+#if defined (osObjectsExternal) // object is external
+#	define osSemaphoreDef(name)  \
+		extern const osSemaphoreDef_t os_semaphore_def_ ## name
+#else                           // define the object
+#	define osSemaphoreDef(name)  \
+		const osSemaphoreDef_t os_semaphore_def_ ## name = { 0 }
+#endif
 
 /// Access a Semaphore definition.
 /// \param         name          name of the semaphore object.
 /// \note CAN BE CHANGED: The parameter to \b osSemaphore shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #define osSemaphore(name)  \
-    & os_semaphore_def_ ## name
+#define osSemaphore(name)      & os_semaphore_def_ ## name
 
 /// Create and Initialize a Semaphore object used for managing resources.
 /// \param[in]     semaphore_def semaphore definition referenced with \ref osSemaphore.
@@ -529,21 +525,19 @@ osStatus osSemaphoreDelete (osSemaphoreId semaphore_id) ;
 /// \param         type          data type of a single block (object).
 /// \note CAN BE CHANGED: The parameter to \b osPoolDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #if defined (osObjectsExternal) // object is external
-  #define osPoolDef(name, no, type)   \
-    extern const osPoolDef_t os_pool_def_ ## name
- #else                           // define the object
-  #define osPoolDef(name, no, type)   \
-    const osPoolDef_t os_pool_def_ ## name = \
-    { (no), sizeof(type), NULL }
- #endif
+#if defined (osObjectsExternal) // object is external
+#	define osPoolDef(name, no, type)   \
+		extern const osPoolDef_t os_pool_def_ ## name
+#else                           // define the object
+#	define osPoolDef(name, no, type)   \
+		const osPoolDef_t os_pool_def_ ## name = { (no), sizeof(type), NULL }
+#endif
 
 /// \brief Access a Memory Pool definition.
 /// \param         name          name of the memory pool
 /// \note CAN BE CHANGED: The parameter to \b osPool shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #define osPool(name) \
-    & os_pool_def_ ## name
+#define osPool(name)     & os_pool_def_ ## name
 
 /// Create and Initialize a memory pool.
 /// \param[in]     pool_def      memory pool definition referenced with \ref osPool.
@@ -582,21 +576,19 @@ osStatus osPoolFree (osPoolId pool_id, void *block) ;
 /// \param         type          data type of a single message element (for debugger).
 /// \note CAN BE CHANGED: The parameter to \b osMessageQDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #if defined (osObjectsExternal) // object is external
-  #define osMessageQDef(name, queue_sz, type)   \
-    extern const osMessageQDef_t os_messageQ_def_ ## name
- #else                           // define the object
-  #define osMessageQDef(name, queue_sz, type)   \
-    const osMessageQDef_t os_messageQ_def_ ## name = \
-    { (queue_sz), sizeof (type)  }
- #endif
+#if defined (osObjectsExternal) // object is external
+#	define osMessageQDef(name, queue_sz, type)   \
+		extern const osMessageQDef_t os_messageQ_def_ ## name
+#else                           // define the object
+#	define osMessageQDef(name, queue_sz, type)   \
+		const osMessageQDef_t os_messageQ_def_ ## name = { (queue_sz), sizeof (type)  }
+#endif
 
 /// \brief Access a Message Queue Definition.
 /// \param         name          name of the queue
 /// \note CAN BE CHANGED: The parameter to \b osMessageQ shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #define osMessageQ(name) \
-    & os_messageQ_def_ ## name
+#define osMessageQ(name)     & os_messageQ_def_ ## name
 
 /// Create and Initialize a Message Queue.
 /// \param[in]     queue_def     queue definition referenced with \ref osMessageQ.
@@ -633,21 +625,19 @@ osEvent osMessageGet (osMessageQId queue_id, uint32_t millisec) ;
 /// \param         type          data type of a single message element
 /// \note CAN BE CHANGED: The parameter to \b osMailQDef shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #if defined (osObjectsExternal) // object is external
-  #define osMailQDef(name, queue_sz, type) \
-    extern const osMailQDef_t os_mailQ_def_ ## name
- #else                           // define the object
-  #define osMailQDef(name, queue_sz, type) \
-    const osMailQDef_t os_mailQ_def_ ## name =  \
-    { (queue_sz), sizeof (type) }
- #endif
+#if defined (osObjectsExternal) // object is external
+#	define osMailQDef(name, queue_sz, type) \
+		extern const osMailQDef_t os_mailQ_def_ ## name
+#else                           // define the object
+#	define osMailQDef(name, queue_sz, type) \
+		const osMailQDef_t os_mailQ_def_ ## name =  { (queue_sz), sizeof (type) }
+#endif
 
 /// \brief Access a Mail Queue Definition.
 /// \param         name          name of the queue
 /// \note CAN BE CHANGED: The parameter to \b osMailQ shall be consistent but the
 ///       macro body is implementation specific in every CMSIS-RTOS.
- #define osMailQ(name)  \
-    & os_mailQ_def_ ## name
+#define osMailQ(name)      & os_mailQ_def_ ## name
 
 /// Create and Initialize mail queue.
 /// \param[in]     queue_def     reference to the mail queue definition obtain with \ref osMailQ
