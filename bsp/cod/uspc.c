@@ -1,6 +1,8 @@
-#include "bsp.h"
+#include "uspc.h"
+#include "esp_log.h"
 
 #include "driver/uart.h"
+#include "cirbu.h"
 
 #define TAG		"uspc"
 
@@ -15,6 +17,8 @@
 #define NUM_EVN		10
 static QueueHandle_t evnQ = NULL ;
 
+static osThreadId tid = NULL ;
+
 #define MAX_BUFF	(2 * BUF_SIZE)
 static union {
 	S_CIRBU c ;
@@ -27,9 +31,6 @@ static void nocb(void)
 
 static USPC_RX_CB cbRx = nocb ;
 
-#define STACK_SIZE			1500
-osThreadDef(uspcThd, osPriorityNormal, 0, STACK_SIZE) ;
-static osThreadId tid = NULL ;
 
 static const uart_event_t quit = {
 	.type = UART_EVENT_MAX
@@ -54,7 +55,7 @@ static void uspcThd(void * v)
                     ESP_LOGI(TAG, "[UART DATA]: %d", event.size);
                     uart_read_bytes(USPC_UART, dtmp, event.size, portMAX_DELAY);
                     ESP_LOGI(TAG, "[DATA EVT]:");
-                    CIRBU_ins(&u.c, &dtmp, event.size) ;
+                    CIRBU_ins(&u.c, dtmp, event.size) ;
                     break;
 				//Event of UART RX break detected
 				case UART_BREAK:
@@ -122,6 +123,9 @@ static void uspcThd(void * v)
 }
 
 
+#define STACK_SIZE			1500
+osThreadDef(uspcThd, osPriorityNormal, 0, STACK_SIZE) ;
+
 bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 {
 	bool esito = false ;
@@ -137,7 +141,7 @@ bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 		if (tid)
 			break ;
 
-		CIRBU_ini(&u.c, MAX_BUFF) ;
+		CIRBU_begin(&u.c, MAX_BUFF) ;
 
 		esp_err_t err = uart_param_config(USPC_UART, &uart_config);
 		if (err != ESP_OK)
@@ -151,7 +155,7 @@ bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 		if (err != ESP_OK)
 			break ;
 
-		tid = osThreadCreate(&uspcThd, NULL) ;
+		tid = osThreadCreate(osThread(uspcThd), NULL) ;
 		if (NULL == tid)
 			break ;
 
