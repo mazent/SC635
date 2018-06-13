@@ -1,6 +1,8 @@
 #ifndef CIRBU_H_
 #define CIRBU_H_
 
+#include "bsp.h"
+
 /*
 	A circular buffer non thread safe
 	
