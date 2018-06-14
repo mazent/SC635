@@ -19,8 +19,18 @@ static void spcThd(void * v)
 	(void) USPC_beg(115200, uspc_cb) ;
 
 	while (true) {
+#if 0
 		osEvent evn = osSignalWait(0, osWaitForever) ;
 		assert(osEventSignal == evn.status) ;
+#else
+		osEvent evn = osSignalWait(0, 1000) ;
+		if (osEventSignal != evn.status) {
+			static int conta = 0 ;
+			sprintf(rx, "ciao %d\n", ++conta) ;
+			USPC_tx(rx, strlen(rx)) ;
+			continue ;
+		}
+#endif
 
 		if (SIG_QUIT == evn.value.signals)
 			break ;
