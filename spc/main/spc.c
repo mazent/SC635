@@ -8,6 +8,7 @@ static osThreadId tid = NULL ;
 
 static void uspc_cb(void)
 {
+	USPC_tx("cb\r\n", 4) ;
 	CHECK_IT( osOK == osSignalSet(tid, SIG_DATA) ) ;
 }
 
@@ -20,7 +21,7 @@ static void spcThd(void * v)
 	(void) USPC_beg(115200, uspc_cb) ;
 
 	while (true) {
-#if 0
+#if 1
 		osEvent evn = osSignalWait(0, osWaitForever) ;
 		assert(osEventSignal == evn.status) ;
 #else
@@ -37,6 +38,7 @@ static void spcThd(void * v)
 			break ;
 
 		if (SIG_DATA == evn.value.signals) {
+			USPC_tx("rx\r\n", 4) ;
 			while (true) {
 				const uint16_t LETTI = USPC_rx(rx, sizeof(rx)) ;
 				if (0 == LETTI)
