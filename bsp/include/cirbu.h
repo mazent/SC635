@@ -13,7 +13,7 @@
 				uint8_t b[sizeof(S_CIRBU) - 1 + MAX_BUFF] ;
 			} u ;
 		initialize:
-			CIRBU_ini(&u.c, MAX_BUFF)
+			CIRBU_begin(&u.c, MAX_BUFF)
 
 	Now you can access the buffer
 */

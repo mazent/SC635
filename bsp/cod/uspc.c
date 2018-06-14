@@ -179,7 +179,12 @@ void USPC_end(void)
 
 void USPC_tx(const void * v, uint16_t dim)
 {
-	uart_write_bytes(USPC_UART, (const char *) v, dim) ;
+	if (NULL == v) {
+	}
+	else if (0 == dim) {
+	}
+	else
+		uart_write_bytes(USPC_UART, (const char *) v, dim) ;
 }
 
 uint16_t USPC_rx(void * v, uint16_t dim)

@@ -209,7 +209,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 	assert(signals >= 0) ;
 
 	if (0 == signals)
-		signals = NEGA(0x80000000) ;
+		signals = NOT(0x80000000) ;
 
 	if (xTaskNotifyWait(
 			0, // ulBitsToClearOnEntry: non cancello niente quando mi metto in attesa

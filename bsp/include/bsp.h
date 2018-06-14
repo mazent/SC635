@@ -17,33 +17,24 @@
 #define MIN(a, b)			((a) < (b) ? (a) : (b))
 #define MAX(a, b)			((a) > (b) ? (a) : (b))
 
-#define INUTILE(x)          (void)(sizeof(x))
-#define NEGA(x)             (~(unsigned int) (x))
+#define UNUSED(x)           (void)(sizeof(x))
+#define NOT(x)              (~(unsigned int) (x))
 #define ABS(x)				(x < 0 ? -(x) : x)
 
-#define DIM_VETT(a)         sizeof(a) / sizeof(a[0])
+#define DIM_VECT(a)         sizeof(a) / sizeof(a[0])
 
 // Debug
 // ==========================================
 
-//#ifdef NDEBUG
-//	// assert() is empty in release ...
-//#   define ASSERT(a)
-//	// ... but I want to keep the expression
-//#   define CHECK_IT(a)      (void)(a)
-//
-//#   define BPOINT
-//#else
-//#   define ASSERT(a)        assert(a)
-//#   define CHECK_IT(a)      assert(a)
-//
-//#   define BPOINT			__BKPT(0)
-//#endif
+#ifdef NDEBUG
+#   define CHECK_IT(a)      (void)(a)
 
-#define ASSERT(a)        assert(a)
-#define CHECK_IT(a)      assert(a)
+#   define BPOINT
+#else
+#   define CHECK_IT(a)      assert(a)
 
-#define BPOINT
+#   define BPOINT			__asm__("break 0,0")
+#endif
 
 
 // Print

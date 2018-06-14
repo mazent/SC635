@@ -16,7 +16,7 @@ static int lev = 0 ;
 
 static void led(void * v)
 {
-	INUTILE(v) ;
+	UNUSED(v) ;
 
 	while (true) {
 		osEvent evn = osSignalWait(0, RIPOSO_MS) ;

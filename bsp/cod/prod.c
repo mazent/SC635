@@ -15,7 +15,7 @@
 
 static bool inited = false ;
 
-static const nvs_handle INVALID_HANDLE = NEGA(0) ;
+static const nvs_handle INVALID_HANDLE = NOT(0) ;
 
 static bool init(void)
 {
