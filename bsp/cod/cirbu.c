@@ -9,9 +9,9 @@ static uint16_t incr(uint16_t x, uint16_t y, uint16_t l)
 
 void CIRBU_ins(S_CIRBU * pC, const uint8_t * data, uint16_t dim)
 {
-	ASSERT(pC) ;
-	ASSERT(data) ;
-	ASSERT(dim) ;
+	assert(pC) ;
+	assert(data) ;
+	assert(dim) ;
 
 	DBG_PRINTF("%s(%p, %u)\n", __FUNCTION__, data, dim) ;
 
@@ -90,9 +90,9 @@ uint16_t CIRBU_ext(S_CIRBU * pC, uint8_t * data, uint16_t dim)
 {
 	uint16_t risul = 0 ;
 
-	ASSERT(pC) ;
-	ASSERT(data) ;
-	ASSERT(dim) ;
+	assert(pC) ;
+	assert(data) ;
+	assert(dim) ;
 
 	DBG_PRINTF("%s(%p, %u)\n", __FUNCTION__, data, dim) ;
 
