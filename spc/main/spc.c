@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "uspc.h"
 
 static osThreadId tid = NULL ;
@@ -26,8 +27,8 @@ static void spcThd(void * v)
 		osEvent evn = osSignalWait(0, 1000) ;
 		if (osEventSignal != evn.status) {
 			static int conta = 0 ;
-			sprintf(rx, "ciao %d\n", ++conta) ;
-			USPC_tx(rx, strlen(rx)) ;
+			sprintf((char *) rx, "ciao %d\n", ++conta) ;
+			USPC_tx(rx, strlen((char *) rx)) ;
 			continue ;
 		}
 #endif
