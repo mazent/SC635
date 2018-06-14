@@ -46,6 +46,6 @@ osThreadDef(spcThd, osPriorityNormal, 0, STACK_SIZE) ;
 
 void app_main(void)
 {
-	tid = osThreadCreate(osThread(uspcThd), NULL) ;
+	tid = osThreadCreate(osThread(spcThd), NULL) ;
 	assert(tid) ;
 }
