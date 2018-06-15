@@ -14,7 +14,7 @@
 
 #define BUF_SIZE 	1024
 
-#define NUM_EVN		10
+#define NUM_EVN		20
 static QueueHandle_t evnQ = NULL ;
 
 static osThreadId tid = NULL ;
@@ -56,6 +56,7 @@ static void uspcThd(void * v)
                     uart_read_bytes(USPC_UART, dtmp, event.size, portMAX_DELAY);
                     ESP_LOGI(TAG, "[DATA EVT]:");
                     CIRBU_ins(&u.c, dtmp, event.size) ;
+                    uart_write_bytes(USPC_UART, dtmp, event.size);
                     break;
 				//Event of UART RX break detected
 				case UART_BREAK:
@@ -135,7 +136,6 @@ bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 			.parity    = UART_PARITY_DISABLE,
 			.stop_bits = UART_STOP_BITS_1,
 			.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-			.rx_flow_ctrl_thresh = 120
 	};
 
 	do {
@@ -160,7 +160,9 @@ bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 		if (NULL == tid)
 			break ;
 
-		cbRx = cb ;
+		if (cb)
+			cbRx = cb ;
+
 		esito = true ;
 		
 	} while (false) ;
@@ -171,7 +173,7 @@ bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 void USPC_end(void)
 {
 	if (tid) {
-		(void) xQueueSend(evnQ, &quit, portMAX_DELAY) ;
+		CHECK_IT(pdTRUE == xQueueSend(evnQ, &quit, portMAX_DELAY)) ;
 	}
 	(void) uart_driver_delete(USPC_UART) ;
 	evnQ = NULL ;

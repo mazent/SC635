@@ -117,33 +117,35 @@ static void uart_event_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void ueem(void)
+void ueem()
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
-    /* Configure parameters of an UART driver,
-     * communication pins and install the driver */
-    uart_config_t uart_config = {
-        .baud_rate = 115200,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
-    };
-    uart_param_config(EX_UART_NUM, &uart_config);
+    USPC_beg(115200, NULL) ;
 
-    //Set UART log level
-    esp_log_level_set(TAG, ESP_LOG_INFO);
-    //Set UART pins (using UART0 default pins ie no changes.)
-    uart_set_pin(EX_UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    //Install UART driver, and get the queue.
-    uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
-
-    //Set uart pattern detect function.
-    uart_enable_pattern_det_intr(EX_UART_NUM, '+', PATTERN_CHR_NUM, 10000, 10, 10);
-    //Reset the pattern queue length to record at most 20 pattern positions.
-    uart_pattern_queue_reset(EX_UART_NUM, 20);
-
-    //Create a task to handler UART event from ISR
-    xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, NULL);
+//    /* Configure parameters of an UART driver,
+//     * communication pins and install the driver */
+//    uart_config_t uart_config = {
+//        .baud_rate = 115200,
+//        .data_bits = UART_DATA_8_BITS,
+//        .parity = UART_PARITY_DISABLE,
+//        .stop_bits = UART_STOP_BITS_1,
+//        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+//    };
+//    uart_param_config(EX_UART_NUM, &uart_config);
+//
+//    //Set UART log level
+//    esp_log_level_set(TAG, ESP_LOG_INFO);
+//    //Set UART pins (using UART0 default pins ie no changes.)
+//    uart_set_pin(EX_UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+//    //Install UART driver, and get the queue.
+//    uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
+//
+//    //Set uart pattern detect function.
+//    uart_enable_pattern_det_intr(EX_UART_NUM, '+', PATTERN_CHR_NUM, 10000, 10, 10);
+//    //Reset the pattern queue length to record at most 20 pattern positions.
+//    uart_pattern_queue_reset(EX_UART_NUM, 20);
+//
+//    //Create a task to handler UART event from ISR
+//    xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, NULL);
 }
