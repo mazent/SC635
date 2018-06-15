@@ -1,5 +1,5 @@
 #include "spc.h"
-#include "spc_priv.h"
+//#include "spc_priv.h"
 #include "uspc.h"
 
 //#define PORTA		SC609_SRV
@@ -88,7 +88,7 @@ static void dati(void)
 
 static void srv3d(void * v)
 {
-    INUTILE(v) ;
+    UNUSED(v) ;
 
     CHECK_IT(USPC_open(115200, dati)) ;
 
@@ -136,7 +136,7 @@ bool SPC_begin(void)
 
     do {
     	if (NULL == tid) {
-        	osThreadDef(srv3d, osPriorityNormal, 1, 1500) ;
+        	osThreadDef(srv3d, osPriorityNormal, 1, 2000) ;
 
         	tid = osThreadCreate(osThread(srv3d), NULL) ;
         	assert(tid) ;
@@ -144,7 +144,7 @@ bool SPC_begin(void)
         		break ;
     	}
 
-    	da_capo(&prx) ;
+    	//da_capo(&prx) ;
 
         esito = true ;
     } while (false) ;
