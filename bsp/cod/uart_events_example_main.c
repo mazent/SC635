@@ -13,6 +13,7 @@
 #include "freertos/queue.h"
 #include "driver/uart.h"
 #include "esp_log.h"
+#include "uspc.h"
 
 static const char *TAG = "uart_events";
 

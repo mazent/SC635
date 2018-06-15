@@ -56,7 +56,7 @@ static void uspcThd(void * v)
                     uart_read_bytes(USPC_UART, dtmp, event.size, portMAX_DELAY);
                     ESP_LOGI(TAG, "[DATA EVT]:");
                     CIRBU_ins(&u.c, dtmp, event.size) ;
-                    uart_write_bytes(USPC_UART, dtmp, event.size);
+                    uart_write_bytes(USPC_UART, (char *) dtmp, event.size);
                     break;
 				//Event of UART RX break detected
 				case UART_BREAK:
