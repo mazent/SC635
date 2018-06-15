@@ -7,14 +7,16 @@
 #include "esp_log.h"
 #include "esp_app_trace.h"
 
+extern void ueem(void) ;
 
 void app_main()
 {
-	esp_log_set_vprintf(esp_apptrace_vprintf);
 	ESP_LOGI("main", ">>>> app_main") ;
 #if 1
+	ueem() ;
+#elif 0
 	LED_begin() ;
-#else
+#elif 0
 	while (true) {
 		PROD_BSN bsn = { 0 } ;
 
@@ -25,6 +27,7 @@ void app_main()
 
 		(void) osDelay(1000) ;
 	}
+#else
 #endif
 	ESP_LOGI("main", "<<<< app_main") ;
 }
