@@ -1,33 +1,14 @@
-#include "cmsis_os.h"
-#include "esp_log.h"
-
 #include "prod.h"
 #include "led.h"
-#include "uspc.h"
-
-
-void dati(void)
-{
-	static uint8_t tmp[100] ;
-
-	ESP_LOGI("main", "dati") ;
-
-	while (true) {
-		const uint16_t LETTI = USPC_rx(tmp, sizeof(tmp)) ;
-		if (LETTI)
-			USPC_tx(tmp, LETTI) ;
-		else
-			break ;
-	}
-}
+#include "spc.h"
 
 void app_main()
 {
-    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("*", ESP_LOG_INFO) ;
 
 	ESP_LOGI("main", ">>>> app_main") ;
 #if 1
-    USPC_beg(115200, dati) ;
+	(void) SPC_begin() ;
 #elif 0
 	LED_begin() ;
 #elif 0

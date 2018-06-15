@@ -9,7 +9,12 @@
 // Per le PRIu32 ecc
 #include <inttypes.h>
 
+// Sistema operativo
 #include "cmsis_os.h"
+
+// Log
+#include "esp_log.h"
+
 
 // Questi mancano
 // ==========================================

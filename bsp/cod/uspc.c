@@ -127,7 +127,7 @@ static void uspcThd(void * v)
 #define STACK_SIZE			1500
 osThreadDef(uspcThd, osPriorityNormal, 0, STACK_SIZE) ;
 
-bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
+bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 {
 	bool esito = false ;
 	uart_config_t uart_config = {
@@ -170,7 +170,7 @@ bool USPC_beg(uint32_t baud, USPC_RX_CB cb)
 	return esito ;
 }
 
-void USPC_end(void)
+void USPC_close(void)
 {
 	if (tid) {
 		CHECK_IT(pdTRUE == xQueueSend(evnQ, &quit, portMAX_DELAY)) ;
