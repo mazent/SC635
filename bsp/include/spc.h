@@ -9,6 +9,7 @@
  * Le funzioni extern dovete implementarvele
  */
 
+// I 14 bit piu' bassi
 typedef uint16_t SPC_CMD ;
 
 
@@ -17,6 +18,7 @@ typedef uint16_t SPC_CMD ;
 #define MAX_DIM_SPC     1024
 
 bool SPC_begin(void) ;
+void SPC_end(void) ;
 
 // Invocata quando arriva un pacchetto
 // Se non ci sono dati, la dimensione e' zero ma il buffer non

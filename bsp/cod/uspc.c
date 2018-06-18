@@ -80,7 +80,6 @@ static void uspcThd(void * v)
     while (cont) {
         //Waiting for UART event.
         if (xQueueReceive(evnQ, (void * )&event, (portTickType)portMAX_DELAY)) {
-            ESP_LOGI(TAG, "uart[%d] event:", USPC_UART);
             switch (event.type) {
                 //Event of UART receving data
                 /*We'd better handler data event fast, there would be much more data events than

@@ -2,6 +2,17 @@
 #include "led.h"
 #include "spc.h"
 
+#define CMD_ECO		((SPC_CMD) 0x0000)
+
+void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
+{
+	switch (cmd) {
+	case CMD_ECO:
+		SPC_resp(cmd, dati, dim) ;
+		break ;
+	}
+}
+
 void app_main()
 {
     esp_log_level_set("*", ESP_LOG_INFO) ;
