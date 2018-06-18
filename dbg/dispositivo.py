@@ -56,6 +56,7 @@ class DISPOSITIVO(object):
         else:
             return eco == dati
 
+
 if __name__ == '__main__':
     d = DISPOSITIVO(uart='com41')
     if d.a_posto():
