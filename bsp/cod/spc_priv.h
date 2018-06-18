@@ -42,6 +42,6 @@ typedef struct {
 	int scritti ;
 } SPC_TX ;
 
-void componi(SPC_TX *, PKNF_CMD, const void *, int) ;
+void componi(SPC_TX *, SPC_CMD, const void *, int) ;
 
 #endif
