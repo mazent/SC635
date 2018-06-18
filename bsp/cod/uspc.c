@@ -39,12 +39,12 @@ static USPC_RX_CB cbRx = nocb ;
 #define S_READ		2
 
 static const uart_event_t req_quit = {
-	.type = UART_EVENT_MAX
+	.type = UART_EVENT_MAX,
 	.size = S_QUIT
 } ;
 
 static const uart_event_t req_read = {
-	.type = UART_EVENT_MAX
+	.type = UART_EVENT_MAX,
 	.size = S_READ
 } ;
 
@@ -75,7 +75,7 @@ static void uspcThd(void * v)
 //    size_t buffered_size;
 
     // Ok, i'm ready
-    CHECK_IT( osOK == osMessagePut(respQ, &resp, 0) ) ;
+    CHECK_IT( osOK == osMessagePut(respQ, (uint32_t) &resp, 0) ) ;
 
     while (cont) {
         //Waiting for UART event.
@@ -169,7 +169,7 @@ static void uspcThd(void * v)
 }
 
 
-#define STACK_SIZE			1500
+#define STACK_SIZE		2000	
 osThreadDef(uspcThd, osPriorityNormal, 0, STACK_SIZE) ;
 
 bool USPC_open(uint32_t baud, USPC_RX_CB cb)
@@ -200,13 +200,6 @@ bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 		if (err != ESP_OK)
 			break ;
 
-		if (NULL == tid) {
-			tid = osThreadCreate(osThread(uspcThd), NULL)
-			assert(tid) ;
-			if (NULL == tid)
-				break ;
-		}
-
 		if (NULL == respQ) {
 			respQ = osMessageCreate(osMessageQ(respQ), NULL) ;
 			assert(respQ) ;
@@ -221,6 +214,14 @@ bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 				break ;
 		}
 
+		if (NULL == tid) {
+			tid = osThreadCreate(osThread(uspcThd), NULL) ;
+			assert(tid) ;
+			if (NULL == tid)
+				break ;
+		}
+
+
 		if (cb)
 			cbRx = cb ;
 
@@ -234,10 +235,10 @@ bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 void USPC_close(void)
 {
 	if (opened) {
-		osEvent evn = osMessageGet(respQ, osWaitForever) ;
-		assert(osEventMessage == evn.status) ;
+		osEvent evn = osMessageGet(respQ, osWaitForever) ; 
+		assert(osEventMessage == evn.status) ; 
 
-		if (osEventMessage == evn.status) {
+		if (osEventMessage == evn.status) { 
 			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_quit, portMAX_DELAY)) ;
 
 			evn = osMessageGet(resp.waitHere, osWaitForever) ;
@@ -288,7 +289,7 @@ uint16_t USPC_rx(void * v, uint16_t dim)
 				recvd = resp.dim ;
 
 				// For the next customer
-				CHECK_IT( osOK == osMessagePut(respQ, &resp, 0) ) ;
+				CHECK_IT( osOK == osMessagePut(respQ, (uint32_t) &resp, 0) ) ;
 			}
 		}
 	}

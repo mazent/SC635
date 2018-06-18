@@ -9,6 +9,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 
 static TickType_t ms_in_tick(uint32_t millisec)
 {
@@ -50,7 +51,7 @@ static QueueHandle_t mzQueueCreate(const UBaseType_t uxQueueLength, const UBaseT
 #if ( configQUEUE_REGISTRY_SIZE > 0 )
     vQueueAddToRegistry(q, nome) ;
 #else
-    INUTILE(nome) ;
+    UNUSED(nome) ;
 #endif
 	return q ;
 }
