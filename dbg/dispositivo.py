@@ -63,9 +63,3 @@ class DISPOSITIVO(object):
         else:
             return eco == dati
 
-
-if __name__ == '__main__':
-    d = DISPOSITIVO(uart=NOME_UART)
-    if d.a_posto():
-        print(d.Eco())
-    d.Chiudi()
