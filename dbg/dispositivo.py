@@ -1,6 +1,13 @@
+import sys
 import struct
 
 import prot
+
+NOME_UART = None
+if sys.platform.startswith("win32"):
+    NOME_UART = "COM41"
+else:
+    NOME_UART = "/dev/ttyUSB1"
 
 
 class DISPOSITIVO(object):
@@ -56,8 +63,9 @@ class DISPOSITIVO(object):
         else:
             return eco == dati
 
+
 if __name__ == '__main__':
-    d = DISPOSITIVO(uart='com41')
+    d = DISPOSITIVO(uart=NOME_UART)
     if d.a_posto():
         print(d.Eco())
     d.Chiudi()

@@ -6,7 +6,7 @@
 #define CARATTERE_DI_FUGA   0x8F
 
 
-extern uint16_t crc16_le(uint16_t, const uint8_t *, int) ;
+extern uint16_t crc1021V(uint16_t, const uint8_t *, int) ;
 
 static uint16_t CRC_I = 0x5635 ;
 
@@ -60,7 +60,7 @@ void esamina(SPC_RX * prx, const uint8_t * dati, const int LETTI)
 	        }
 	        else {
 	            // Controllo il crc
-				uint16_t crc = crc16_le(CRC_I, brx, dimRx) ;
+				uint16_t crc = crc1021V(CRC_I, brx, dimRx) ;
 				if (0 == crc) {
 					// Tolgo il crc
 					dimRx -= 2 ;
@@ -125,7 +125,7 @@ void componi(SPC_TX * ptx, SPC_CMD cmd, const void * v, int d)
     u.cmd = cmd ;
     dimTx = aggiungi(btx, dimTx, u.b[0]) ;
     dimTx = aggiungi(btx, dimTx, u.b[1]) ;
-    uint16_t crc = crc16_le(CRC_I, u.b, sizeof(cmd)) ;
+    uint16_t crc = crc1021V(CRC_I, u.b, sizeof(cmd)) ;
 
     // Dati
     if (v) {
@@ -136,7 +136,7 @@ void componi(SPC_TX * ptx, SPC_CMD cmd, const void * v, int d)
         for (scritti=0 ; (scritti < d) && (dimTx < DIM_TX) ; scritti++)
         	dimTx = aggiungi(btx, dimTx, p[scritti]) ;
 
-        crc = crc16_le(crc, p, scritti) ;
+        crc = crc1021V(crc, p, scritti) ;
     }
 
     // Checksum
