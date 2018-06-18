@@ -86,7 +86,7 @@ static void dati(void)
 #endif
 }
 
-static void srv3d(void * v)
+static void spcThd(void * v)
 {
     UNUSED(v) ;
 
@@ -98,7 +98,7 @@ static void srv3d(void * v)
     	if (SIG_DATA & evn.value.signals) {
     		static uint8_t tmp[100] ;
 
-    		ESP_LOGI("srv3d", "dati") ;
+    		ESP_LOGI("spcThd", "dati") ;
 
     		while (true) {
     			const uint16_t LETTI = USPC_rx(tmp, sizeof(tmp)) ;
@@ -136,9 +136,9 @@ bool SPC_begin(void)
 
     do {
     	if (NULL == tid) {
-        	osThreadDef(srv3d, osPriorityNormal, 1, 2000) ;
+        	osThreadDef(spcThd, osPriorityNormal, 1, 2000) ;
 
-        	tid = osThreadCreate(osThread(srv3d), NULL) ;
+        	tid = osThreadCreate(osThread(spcThd), NULL) ;
         	assert(tid) ;
         	if (NULL == tid)
         		break ;

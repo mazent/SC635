@@ -14,6 +14,8 @@
 
 #define BUF_SIZE 	1024
 
+static bool opened = false ;
+
 #define NUM_EVN		20
 static QueueHandle_t evnQ = NULL ;
 
@@ -31,10 +33,39 @@ static void nocb(void)
 
 static USPC_RX_CB cbRx = nocb ;
 
+// requests from api
 
-static const uart_event_t quit = {
+#define S_QUIT		1
+#define S_READ		2
+
+static const uart_event_t req_quit = {
 	.type = UART_EVENT_MAX
+	.size = S_QUIT
 } ;
+
+static const uart_event_t req_read = {
+	.type = UART_EVENT_MAX
+	.size = S_READ
+} ;
+
+// response to api
+
+osMessageQDef(respR, 1, bool) ;
+
+typedef struct {
+	osMessageQId waitHere ;
+
+	void * buf ;
+	uint16_t dim ;
+} RESP ;
+
+static RESP resp = {
+	.waitHere = NULL
+} ;
+
+osMessageQDef(respQ, 1, RESP *) ;
+static osMessageQId respQ = NULL ;
+
 
 static void uspcThd(void * v)
 {
@@ -42,6 +73,10 @@ static void uspcThd(void * v)
 	bool cont = true ;
     uart_event_t event;
 //    size_t buffered_size;
+
+    // Ok, i'm ready
+    CHECK_IT( osOK == osMessagePut(respQ, &resp, 0) ) ;
+
     while (cont) {
         //Waiting for UART event.
         if (xQueueReceive(evnQ, (void * )&event, (portTickType)portMAX_DELAY)) {
@@ -109,7 +144,15 @@ static void uspcThd(void * v)
 //                    }
                     break;
                 case UART_EVENT_MAX:
-                	cont = false ;
+                	switch (event.size) {
+                	case S_QUIT:
+                		cont = false ;
+                		break ;
+                	case S_READ:
+                		resp.dim = CIRBU_ext(&u.c, (uint8_t *) resp.buf, resp.dim) ;
+                		CHECK_IT( osOK == osMessagePut(resp.waitHere, true, 0) ) ;
+                		break ;
+                	}
                 	break ;
                 //Others
                 default:
@@ -121,6 +164,8 @@ static void uspcThd(void * v)
 
 	(void) osThreadTerminate(NULL) ;
 	tid = NULL ;
+
+	CHECK_IT( osOK == osMessagePut(resp.waitHere, true, 0) ) ;
 }
 
 
@@ -129,7 +174,6 @@ osThreadDef(uspcThd, osPriorityNormal, 0, STACK_SIZE) ;
 
 bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 {
-	bool esito = false ;
 	uart_config_t uart_config = {
 			.baud_rate = baud,
 			.data_bits = UART_DATA_8_BITS,
@@ -139,7 +183,7 @@ bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 	};
 
 	do {
-		if (tid)
+		if (opened)
 			break ;
 
 		CIRBU_begin(&u.c, MAX_BUFF) ;
@@ -156,33 +200,63 @@ bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 		if (err != ESP_OK)
 			break ;
 
-		tid = osThreadCreate(osThread(uspcThd), NULL) ;
-		if (NULL == tid)
-			break ;
+		if (NULL == tid) {
+			tid = osThreadCreate(osThread(uspcThd), NULL)
+			assert(tid) ;
+			if (NULL == tid)
+				break ;
+		}
+
+		if (NULL == respQ) {
+			respQ = osMessageCreate(osMessageQ(respQ), NULL) ;
+			assert(respQ) ;
+			if (NULL == respQ)
+				break ;
+		}
+
+		if (NULL == resp.waitHere) {
+			resp.waitHere = osMessageCreate(osMessageQ(respR), NULL) ;
+			assert(resp.waitHere) ;
+			if (NULL == resp.waitHere)
+				break ;
+		}
 
 		if (cb)
 			cbRx = cb ;
 
-		esito = true ;
+		opened = true ;
 		
 	} while (false) ;
 	
-	return esito ;
+	return opened ;
 }
 
 void USPC_close(void)
 {
-	if (tid) {
-		CHECK_IT(pdTRUE == xQueueSend(evnQ, &quit, portMAX_DELAY)) ;
+	if (opened) {
+		osEvent evn = osMessageGet(respQ, osWaitForever) ;
+		assert(osEventMessage == evn.status) ;
+
+		if (osEventMessage == evn.status) {
+			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_quit, portMAX_DELAY)) ;
+
+			evn = osMessageGet(resp.waitHere, osWaitForever) ;
+			assert(osEventMessage == evn.status) ;
+
+			(void) uart_driver_delete(USPC_UART) ;
+			evnQ = NULL ;
+			cbRx = nocb ;
+
+			opened = false ;
+		}
 	}
-	(void) uart_driver_delete(USPC_UART) ;
-	evnQ = NULL ;
-	cbRx = nocb ;
 }
 
 void USPC_tx(const void * v, uint16_t dim)
 {
-	if (NULL == v) {
+	if (!opened) {
+	}
+	else if (NULL == v) {
 	}
 	else if (0 == dim) {
 	}
@@ -192,5 +266,32 @@ void USPC_tx(const void * v, uint16_t dim)
 
 uint16_t USPC_rx(void * v, uint16_t dim)
 {
-	return CIRBU_ext(&u.c, (uint8_t *) v, dim) ;
+	uint16_t recvd = 0 ;
+
+	if (opened) {
+		osEvent evn = osMessageGet(respQ, osWaitForever) ;
+		assert(osEventMessage == evn.status) ;
+
+		if (osEventMessage == evn.status) {
+			// Now resp is mine
+			resp.buf = v ;
+			resp.dim = dim ;
+
+			// Send the request
+			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_read, portMAX_DELAY)) ;
+
+			// Wait for the job
+			evn = osMessageGet(resp.waitHere, osWaitForever) ;
+			assert(osEventMessage == evn.status) ;
+
+			if (osEventMessage == evn.status) {
+				recvd = resp.dim ;
+
+				// For the next customer
+				CHECK_IT( osOK == osMessagePut(respQ, &resp, 0) ) ;
+			}
+		}
+	}
+
+	return recvd ;
 }

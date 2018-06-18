@@ -18,10 +18,8 @@ static TickType_t ms_in_tick(uint32_t millisec)
 
 	if (millisec == osWaitForever)
 	    ticks = portMAX_DELAY ;
-	else if (0 == millisec) {
-		// At least one tick
-		return 1 ;
-	}
+	else if (0 == millisec)
+		return 0 ;
 	else {
 		// Rounding
 	    ticks = 1 + (millisec - 1) / portTICK_PERIOD_MS ;
@@ -44,6 +42,17 @@ static unsigned portBASE_TYPE freeRtos_pri(osPriority priority)
 	case osPriorityRealtime:    return tskIDLE_PRIORITY + 6 ;
 	default:					return tskIDLE_PRIORITY ;
 	}
+}
+
+static QueueHandle_t mzQueueCreate(const UBaseType_t uxQueueLength, const UBaseType_t uxItemSize, const char * nome)
+{
+	QueueHandle_t q = xQueueCreate(uxQueueLength, uxItemSize) ;
+#if ( configQUEUE_REGISTRY_SIZE > 0 )
+    vQueueAddToRegistry(q, nome) ;
+#else
+    INUTILE(nome) ;
+#endif
+	return q ;
 }
 
 
@@ -137,6 +146,9 @@ osStatus osThreadTerminate(osThreadId thread_id)
 
 osStatus osDelay(uint32_t millisec)
 {
+	if (0 == millisec)
+		millisec = 1 ;
+
 	vTaskDelay( ms_in_tick(millisec) ) ;
 
 	return osOK ;
@@ -203,10 +215,11 @@ osStatus osSignalSet(osThreadId thread_id, int32_t signal)
 
 osEvent osSignalWait(int32_t signals, uint32_t millisec)
 {
-	osEvent ret ;
+	osEvent ret = { 0 } ;
 	TickType_t ticks = ms_in_tick(millisec) ;
 
 	assert(signals >= 0) ;
+	assert( !xPortInIsrContext() ) ;
 
 	if (0 == signals)
 		signals = NOT(0x80000000) ;
@@ -323,27 +336,74 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 #if (defined (osFeature_MessageQ)  &&  (osFeature_MessageQ != 0))     // Message Queues available
 
-///// Create and Initialize a Message Queue.
-///// \param[in]     queue_def     queue definition referenced with \ref osMessageQ.
-///// \param[in]     thread_id     thread ID (obtained by \ref osThreadCreate or \ref osThreadGetId) or NULL.
-///// \return message queue ID for reference by other functions or NULL in case of error.
-///// \note MUST REMAIN UNCHANGED: \b osMessageCreate shall be consistent in every CMSIS-RTOS.
-//osMessageQId osMessageCreate (const osMessageQDef_t *queue_def, osThreadId thread_id);
-//
-///// Put a Message to a Queue.
-///// \param[in]     queue_id      message queue ID obtained with \ref osMessageCreate.
-///// \param[in]     info          message information.
-///// \param[in]     millisec      \ref CMSIS_RTOS_TimeOutValue or 0 in case of no time-out.
-///// \return status code that indicates the execution status of the function.
-///// \note MUST REMAIN UNCHANGED: \b osMessagePut shall be consistent in every CMSIS-RTOS.
-//osStatus osMessagePut (osMessageQId queue_id, uint32_t info, uint32_t millisec);
-//
-///// Get a Message or Wait for a Message from a Queue.
-///// \param[in]     queue_id      message queue ID obtained with \ref osMessageCreate.
-///// \param[in]     millisec      \ref CMSIS_RTOS_TimeOutValue or 0 in case of no time-out.
-///// \return event information that includes status code.
-///// \note MUST REMAIN UNCHANGED: \b osMessageGet shall be consistent in every CMSIS-RTOS.
-//osEvent osMessageGet (osMessageQId queue_id, uint32_t millisec);
+osMessageQId osMessageCreate(const osMessageQDef_t *queue_def, osThreadId thread_id)
+{
+	UNUSED(thread_id) ;
+
+	assert( !xPortInIsrContext() ) ;
+
+	return mzQueueCreate(queue_def->queue_sz, queue_def->item_sz, queue_def->nome) ;
+}
+
+osStatus osMessagePut(osMessageQId queue_id, uint32_t info, uint32_t millisec)
+{
+    TickType_t ticks = ms_in_tick(millisec) ;
+
+    assert(queue_id) ;
+
+    if (queue_id == NULL)
+        return osErrorParameter ;
+    else if ( xPortInIsrContext() ) {
+        if (xQueueSendFromISR(queue_id, &info, NULL) != pdTRUE)
+            return osErrorResource ;
+
+        portYIELD_FROM_ISR() ;
+    }
+    else {
+        if (xQueueSend(queue_id, &info, ticks) != pdTRUE)
+            return osErrorResource ;
+    }
+
+    return osOK ;
+}
+
+osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
+{
+    TickType_t ticks = ms_in_tick(millisec) ;
+    osEvent event ;
+
+    assert(queue_id) ;
+
+    event.def.message_id = queue_id ;
+    event.value.v = 0 ;
+
+    if (queue_id == NULL) {
+        event.status = osErrorParameter ;
+        return event ;
+    }
+
+    if ( xPortInIsrContext() ) {
+        if (xQueueReceiveFromISR(queue_id, &event.value.v, NULL) == pdTRUE) {
+            /* We have mail */
+            event.status = osEventMessage ;
+        }
+        else {
+            event.status = osOK ;
+        }
+        portYIELD_FROM_ISR() ;
+    }
+    else {
+        if (xQueueReceive(queue_id, &event.value.v, ticks) == pdTRUE) {
+            /* We have mail */
+            event.status = osEventMessage ;
+        }
+        else {
+            event.status = (ticks == 0) ? osOK : osEventTimeout ;
+        }
+    }
+
+    return event ;
+}
 
 #endif     // Message Queues available
 
