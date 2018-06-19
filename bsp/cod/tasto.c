@@ -11,6 +11,16 @@
 #	define BUTTON    		GPIO_NUM_0
 #endif
 
+static const gpio_config_t cfg = {
+	.pin_bit_mask = BUTTON_SEL,
+	.mode = GPIO_MODE_INPUT,
+	.intr_type = GPIO_INTR_ANYEDGE
+//		// No pull
+//		.pull_up_en
+//		.pull_down_en
+};
+
+
 static void tst_vuota(bool x)
 {
 	UNUSED(x) ;
@@ -29,23 +39,23 @@ static void IRAM_ATTR button_isr(void * v)
 
 bool TST_beg(PF_TST cb)
 {
-	gpio_config_t cfg = {
-		.pin_bit_mask = BUTTON_SEL,
-		.mode = GPIO_MODE_INPUT,
-		.intr_type = GPIO_INTR_ANYEDGE
-//		// No pull
-//		.pull_up_en
-//		.pull_down_en
-	};
+	bool esito = false ;
 
 	assert(cb) ;
 	if (cb)
 		cbTst = cb ;
 
-	gpio_config(&cfg) ;
-	gpio_isr_handler_add(BUTTON, button_isr, NULL) ;
-	
-	return true ;
+	do {
+		if (ESP_OK != gpio_config(&cfg))
+			break ;
+
+		if (ESP_OK != gpio_isr_handler_add(BUTTON, button_isr, NULL))
+			break ;
+
+		esito = true ;
+	} while (false) ;
+
+	return esito ;
 }
 
 void TST_end(void)

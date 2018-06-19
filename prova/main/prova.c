@@ -19,12 +19,15 @@ void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
 	}
 }
 
+bool pres = false ;
+bool rila = false ;
+
 void tasto(bool premuto)
 {
 	if (premuto)
-		ESP_LOGI("tasto", "PREMUTO") ;
+		pres = true ;
 	else
-		ESP_LOGI("tasto", "MOLLATO") ;
+		rila = true ;
 }
 
 void app_main()
@@ -35,6 +38,18 @@ void app_main()
 	ESP_LOGI("main", ">>>> app_main") ;
 #if 1
 	CHECK_IT( TST_beg(tasto) ) ;
+
+	while (true) {
+		osDelay(500) ;
+		if (pres) {
+			ESP_LOGI("tasto", "PREMUTO") ;
+			pres = false ;
+		}
+		if (rila) {
+			ESP_LOGI("tasto", "MOLLATO") ;
+			rila = false ;
+		}
+	}
 #elif 0
 	esp_log_level_set("*", ESP_LOG_NONE) ;
 	(void) SPC_begin() ;
