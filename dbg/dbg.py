@@ -8,9 +8,11 @@ import sys
 import time
 
 try:
+    # 2
     import Queue as coda
     import tkFileDialog as dialogo
-except ModuleNotFoundError:
+except ImportError:
+    # 3
     import queue as coda
     import tkinter.filedialog as dialogo
 

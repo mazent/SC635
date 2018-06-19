@@ -1,6 +1,8 @@
 #include "spc_priv.h"
 #include "uspc.h"
 
+#define BAUD		921600
+
 #define SPC_STACK		2000
 
 #define SIG_DATA	(1 << 0)
@@ -51,7 +53,7 @@ static void spcThd(void * v)
 {
     UNUSED(v) ;
 
-    CHECK_IT(USPC_open(115200, dati)) ;
+    CHECK_IT(USPC_open(BAUD, dati)) ;
 
     while (true) {
     	osEvent evn = osSignalWait(0, osWaitForever) ;
