@@ -10,6 +10,9 @@ void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
 	case CMD_ECO:
 		SPC_resp(cmd, dati, dim) ;
 		break ;
+	default:
+		SPC_unk(cmd) ;
+		break ;
 	}
 }
 
