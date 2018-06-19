@@ -44,6 +44,8 @@ bool TST_beg(PF_TST cb)
 
 	gpio_config(&cfg) ;
 	gpio_isr_handler_add(BUTTON, button_isr, NULL) ;
+	
+	return true ;
 }
 
 void TST_end(void)
