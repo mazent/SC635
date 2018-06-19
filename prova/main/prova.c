@@ -15,7 +15,7 @@ void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
 
 void app_main()
 {
-    esp_log_level_set("*", ESP_LOG_INFO) ;
+    esp_log_level_set("*", ESP_LOG_NONE) ;
 
 	ESP_LOGI("main", ">>>> app_main") ;
 #if 1
