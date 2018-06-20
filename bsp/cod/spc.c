@@ -1,7 +1,7 @@
 #include "spc_priv.h"
 #include "uspc.h"
 
-#define BAUD		921600
+#define BAUD		115200
 
 #define SPC_STACK		2000
 

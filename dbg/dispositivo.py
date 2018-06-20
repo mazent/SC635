@@ -15,10 +15,10 @@ class DISPOSITIVO(object):
     def __init__(self, **argo):
         self.coda = None
         try:
-            self.prot = prot.PROT(porta=argo['uart'], brate=921600)
+            self.prot = prot.PROT(porta=argo['uart'])
         except KeyError:
             try:
-                self.prot = prot.PROT(vid=argo['vid'], pid=argo['pid'], brate=921600)
+                self.prot = prot.PROT(vid=argo['vid'], pid=argo['pid'])
             except KeyError:
                 self.prot = None
 
