@@ -18,7 +18,7 @@ bool AP_beg(const S_AP * ap)
     	if (ESP_OK != esp_wifi_init(&cfg))
     		break ;
 
-    	strcpy(wifi_config.ap.ssid, ap->ssid) ;
+    	strcpy((char *) wifi_config.ap.ssid, ap->ssid) ;
     	wifi_config.ap.ssid_len = strlen(ap->ssid) ;
     	wifi_config.ap.ssid_hidden = ap->ssid_hidden ;
     	switch (ap->auth) {

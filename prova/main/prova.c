@@ -2,6 +2,7 @@
 #include "led.h"
 #include "spc.h"
 #include "tasto.h"
+#include "ap.h"
 
 #include "driver/gpio.h"
 
@@ -154,7 +155,7 @@ void app_main()
 #if 1
 	// ap
 	S_AP sap = {
-		.ssid[32] = "SC635",
+		.ssid = "SC635",
 		.max_connection = 2,
 		.auth = AUTH_OPEN
 	} ;
