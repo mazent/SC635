@@ -19,7 +19,7 @@ static osThreadId tid = NULL ;
 static uint8_t * msg = NULL ;
 
 static S_GST_CB cb = {
-	.conn = NULL.
+	.conn = NULL,
 	.msg = NULL,
 	.scon = NULL
 } ;
