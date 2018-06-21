@@ -142,7 +142,7 @@ static void gstSRV(void * v)
 									close(cln) ;
 								close(srvE) ;
 
-								send(srvI, &cmd, sizeof(cmd)) ;
+								(void) sendto(srvI, &cmd, sizeof(cmd), 0, NULL, 0) ;
 
 								continua = false ;
 								break ;
