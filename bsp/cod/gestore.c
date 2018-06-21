@@ -159,7 +159,7 @@ static void gstSRV(void * v)
 							const char * ip = inet_ntoa (clientname.sin_addr) ;
 							uint16_t porta = ntohs (clientname.sin_port) ;
 
-							ESP_LOGI(TAG, "connesso %s:%hd", ip, porta) ;
+							ESP_LOGI(TAG, "connesso %s:%04X", ip, porta) ;
 
 							FD_SET(cln, &active_fd_set);
 
