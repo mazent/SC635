@@ -48,13 +48,12 @@ static void gst_conn(const char * ip, uint16_t porta)
 
 static void gst_msg(void * v, int d)
 {
-	UNUSED(v) ;
-	UNUSED(d) ;
+	// eco
+	(void) GST_tx(v, d) ;
 }
 
 static void gst_scon(void)
 {
-
 }
 
 static S_GST_CB gstcb = {
