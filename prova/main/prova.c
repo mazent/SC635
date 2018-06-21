@@ -58,7 +58,7 @@ static void gst_scon(void)
 }
 
 static S_GST_CB gstcb = {
-	.conn = gst_conn ;
+	.conn = gst_conn, 
 	.msg = gst_msg,
 	.scon = gst_scon
 } ;
