@@ -181,7 +181,7 @@ static void acb_rx(uint8_t * v, int dim)
 		aMsg.dim = dim ;
 		if (dim)
 			aMsg.dati = v + sizeof(SPC_CMD) ;
-		else {
+		else
 			aMsg.dati = NULL ;
 
 		if (pfAmsg)
@@ -242,5 +242,38 @@ void SPC_a_resp(SPC_A_RSP * r, SPC_CMD cmd, const void * v, int d)
 	}
 }
 
-void SPC_a_unk(SPC_A_RSP *, SPC_CMD) ;
-void SPC_a_err(SPC_A_RSP *, SPC_CMD) ;
+void SPC_a_unk(SPC_A_RSP * r, SPC_CMD cmd)
+{
+	assert(tid) ;
+	assert(r) ;
+
+	if (r) {
+		cmd |= ERR_SCO ;
+
+		atx.dimTx = 0 ;
+		atx.scritti = 0 ;
+
+		componi(&atx, cmd, NULL, 0) ;
+
+		r->dati = atx.tx ;
+		r->dim = atx.dimTx ;
+	}
+}
+
+void SPC_a_err(SPC_A_RSP * r, SPC_CMD cmd)
+{
+	assert(tid) ;
+	assert(r) ;
+
+	if (r) {
+		cmd |= ERR_EXE ;
+
+		atx.dimTx = 0 ;
+		atx.scritti = 0 ;
+
+		componi(&atx, cmd, NULL, 0) ;
+
+		r->dati = atx.tx ;
+		r->dim = atx.dimTx ;
+	}
+}
