@@ -7,18 +7,19 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+#include "gestore.h"
+#include "pbc.h"
+
+
 #define PORT    0xC635
 #define STACK	2000
 
-#include "gestore.h"
 
 static const char *TAG = "gst";
 
 static osThreadId tid = NULL ;
-#define DIM_MSG 		1600
-static uint8_t * msg = NULL ;
 
-static S_GST_CB cb = {
+static S_GST_CFG cfg = {
 	.conn = NULL,
 	.msg = NULL,
 	.scon = NULL
@@ -80,6 +81,7 @@ static void gstSRV(void * v)
 	int i;
 	struct sockaddr_in clientname;
 	size_t size;
+	UN_BUFFER * msg = (UN_BUFFER *) osPoolAlloc(cfg.mp) ;
 
 	UNUSED(v) ;
 
@@ -163,23 +165,39 @@ static void gstSRV(void * v)
 
 							FD_SET(cln, &active_fd_set);
 
-							cb.conn(ip, porta) ;
+							cfg.conn(ip, porta) ;
 						}
 					}
 					else {
 						/* Data arriving on an already-connected socket. */
-						int nbytes = read (i, msg, DIM_MSG);
-						if (nbytes <= 0) {
-							close (i);
-							FD_CLR (i, &active_fd_set);
-							ESP_LOGI(TAG, "sconnesso") ;
+						do {
+							if (NULL == msg) {
+								// Riprovo
+								msg = (UN_BUFFER *) osPoolAlloc(cfg.mp) ;
 
-							cb.scon() ;
-						}
-						else {
-							/* Data read. */
-							cb.msg(msg, nbytes) ;
-						}
+								ESP_LOGE(TAG, "buffer esauriti") ;
+								if (NULL == msg)
+									break ;
+							}
+
+							int nbytes = read (i, msg->mem, DIM_BUFFER);
+							if (nbytes <= 0) {
+								close (i);
+								FD_CLR (i, &active_fd_set);
+
+								ESP_LOGI(TAG, "sconnesso") ;
+
+								cfg.scon() ;
+							}
+							else {
+								/* Data read. */
+								msg->dim = nbytes ;
+								cfg.msg(msg) ;
+
+								msg = (UN_BUFFER *) osPoolAlloc(cfg.mp) ;
+							}
+
+						} while (false) ;
 					}
 				}
 			}
@@ -191,7 +209,7 @@ static void gstSRV(void * v)
 	tid = NULL ;
 }
 
-bool GST_beg(S_GST_CB * pCB)
+bool GST_beg(S_GST_CFG * pCB)
 {
 	bool esito = false ;
 
@@ -199,6 +217,8 @@ bool GST_beg(S_GST_CB * pCB)
 		if (NULL == pCB)
 			break ;
 
+		if (NULL == pCB->mp)
+			break ;
 		if (NULL == pCB->conn)
 			break ;
 		if (NULL == pCB->scon)
@@ -206,20 +226,13 @@ bool GST_beg(S_GST_CB * pCB)
 		if (NULL == pCB->msg)
 			break ;
 
-		if (NULL == msg) {
-			msg = malloc(DIM_MSG) ;
-			assert(msg) ;
-			if (NULL == msg)
-				break ;
-		}
-
 		osThreadDef(gstSRV, osPriorityNormal, 1, STACK) ;
 		tid = osThreadCreate(osThread(gstSRV), NULL) ;
 		assert(tid) ;
 		if (NULL == tid)
 			break ;
 
-		cb = *pCB ;
+		cfg = *pCB ;
 
 		esito = true ;
 

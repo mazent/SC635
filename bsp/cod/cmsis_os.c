@@ -305,30 +305,111 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 
 #if (defined (osFeature_Pool)  &&  (osFeature_Pool != 0))  // Memory Pool Management available
 
-///// Create and Initialize a memory pool.
-///// \param[in]     pool_def      memory pool definition referenced with \ref osPool.
-///// \return memory pool ID for reference by other functions or NULL in case of error.
-///// \note MUST REMAIN UNCHANGED: \b osPoolCreate shall be consistent in every CMSIS-RTOS.
-//osPoolId osPoolCreate (const osPoolDef_t *pool_def);
-//
-///// Allocate a memory block from a memory pool.
-///// \param[in]     pool_id       memory pool ID obtain referenced with \ref osPoolCreate.
-///// \return address of the allocated memory block or NULL in case of no memory available.
-///// \note MUST REMAIN UNCHANGED: \b osPoolAlloc shall be consistent in every CMSIS-RTOS.
-//void *osPoolAlloc (osPoolId pool_id);
-//
-///// Allocate a memory block from a memory pool and set memory block to zero.
-///// \param[in]     pool_id       memory pool ID obtain referenced with \ref osPoolCreate.
-///// \return address of the allocated memory block or NULL in case of no memory available.
-///// \note MUST REMAIN UNCHANGED: \b osPoolCAlloc shall be consistent in every CMSIS-RTOS.
-//void *osPoolCAlloc (osPoolId pool_id);
-//
-///// Return an allocated memory block back to a specific memory pool.
-///// \param[in]     pool_id       memory pool ID obtain referenced with \ref osPoolCreate.
-///// \param[in]     block         address of the allocated memory block that is returned to the memory pool.
-///// \return status code that indicates the execution status of the function.
-///// \note MUST REMAIN UNCHANGED: \b osPoolFree shall be consistent in every CMSIS-RTOS.
-//osStatus osPoolFree (osPoolId pool_id, void *block);
+/*
+	+-----+  free  +--------+
+	|     +-------->        |
+	| USR |  alloc | liberi |
+	|     <--------+        |
+	+-----+        +--------+
+*/
+
+typedef struct os_pool_cb {
+    QueueHandle_t liberi ;
+    size_t dim_elem ;
+    uint8_t * mem ;
+} os_pool_cb_t ;
+
+osPoolId osPoolCreate(const osPoolDef_t * pool_def)
+{
+	osPoolId pid = NULL ;
+	os_pool_cb_t tmp = { .dim_elem = pool_def->item_sz } ;
+	uint8_t * mem = NULL ;
+
+	assert( !xPortInIsrContext() ) ;
+
+	tmp.liberi = mzQueueCreate(pool_def->pool_sz, sizeof(void *), pool_def->nome) ;
+	assert(tmp.liberi) ;
+	if (NULL == tmp.liberi)
+		goto err1 ;
+
+	tmp.mem = pvPortMalloc(pool_def->pool_sz * pool_def->item_sz) ;
+	assert(tmp.mem) ;
+	if (NULL == tmp.mem)
+		goto err2 ;
+
+	// All'inizio tutti i buffer sono liberi
+	mem = tmp.mem ;
+	for (uint32_t i=0 ; i<pool_def->pool_sz ; i++, mem += pool_def->item_sz)
+		(void) xQueueSend(tmp.liberi, &mem, 0) ;
+
+	pid = pvPortMalloc(sizeof(os_pool_cb_t)) ;
+	assert(pid) ;
+	if (NULL == pid)
+		goto err3 ;
+
+	*pid = tmp ;
+	goto err1 ;
+
+err3:
+	vPortFree(tmp.mem) ;
+err2:
+	vQueueDelete(tmp.liberi) ;
+err1:
+    return pid ;
+}
+
+void * osPoolAlloc(osPoolId pool_id)
+{
+	void * buf = NULL ;
+
+	assert(pool_id) ;
+
+	if (NULL == pool_id) {
+	}
+	else if (xPortInIsrContext()) {
+		(void) xQueueReceiveFromISR(pool_id->liberi, &buf, NULL) ;
+
+		portYIELD_FROM_ISR() ;
+	}
+	else
+		(void) xQueueReceive(pool_id->liberi, &buf, 0) ;
+
+	return buf ;
+}
+
+void * osPoolCAlloc(osPoolId pool_id)
+{
+	void * buf = osPoolAlloc(pool_id) ;
+	if (buf)
+		memset(buf, 0, pool_id->dim_elem) ;
+
+	return buf ;
+}
+
+osStatus osPoolFree(osPoolId pool_id, void * buf)
+{
+	assert(pool_id) ;
+	assert(buf) ;
+
+	if (NULL == pool_id)
+		return osErrorParameter ;
+	else if (NULL == buf)
+		return osErrorParameter ;
+	else if (xPortInIsrContext()) {
+		osStatus esito = osOK ;
+
+		if (pdTRUE != xQueueSendFromISR(pool_id->liberi, &buf, NULL))
+			esito = osErrorOS ;
+
+		portYIELD_FROM_ISR() ;
+
+		return esito ;
+	}
+	else if (pdTRUE == xQueueSend(pool_id->liberi, &buf, 0))
+		return osOK ;
+	else
+		return osErrorOS ;
+}
 
 #endif   // Memory Pool Management available
 

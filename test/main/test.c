@@ -4,6 +4,7 @@
 #include "tasto.h"
 #include "ap.h"
 #include "gestore.h"
+#include "pbc.h"
 
 #include "driver/gpio.h"
 
@@ -12,7 +13,9 @@
 #include "nvs_flash.h"
 
 
-//#define CMD_ECO		((SPC_CMD) 0x0000)
+static const char *TAG = "test";
+
+#define CMD_ECO		((SPC_CMD) 0x0000)
 //
 //void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
 //{
@@ -25,20 +28,18 @@
 //		break ;
 //	}
 //}
-//
-//bool pres = false ;
-//bool rila = false ;
-//
-//void tasto(bool premuto)
-//{
-//	if (premuto)
-//		pres = true ;
-//	else
-//		rila = true ;
-//}
 
-static const char *TAG = "mz";
 
+// memoria per i messaggi
+osPoolDef(pbcid, NUM_BUFFER, UN_BUFFER) ;
+static osPoolId pbcid = NULL ;
+
+// coda dei messaggi
+osMessageQDef(comes, NUM_BUFFER, UN_BUFFER *) ;
+static osMessageQId comes = NULL ;
+
+// Speciale
+#define TCP_MSG		((uin32_t) 0xC1E3877F)
 
 static void gst_conn(const char * ip, uint16_t porta)
 {
@@ -46,17 +47,16 @@ static void gst_conn(const char * ip, uint16_t porta)
 	UNUSED(porta) ;
 }
 
-static void gst_msg(void * v, int d)
+static void gst_msg(UN_BUFFER * msg)
 {
-	// eco
-	(void) GST_tx(v, d) ;
+	CHECK_IT(osOK == osMessagePut(comes, (uint32_t) msg, 0)) ;
 }
 
 static void gst_scon(void)
 {
 }
 
-static S_GST_CB gstcb = {
+static S_GST_CFG gstcb = {
 	.conn = gst_conn, 
 	.msg = gst_msg,
 	.scon = gst_scon
@@ -158,6 +158,10 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 	return ESP_OK;
 }
 
+static void ip_msg(void)
+{
+	CHECK_IT(osOK == osMessagePut(comes, TCP_MSG, 0)) ;
+}
 
 void app_main()
 {
@@ -170,53 +174,57 @@ void app_main()
 		ESP_ERROR_CHECK( nvs_flash_init() );
 	}
 
+	pbcid = osPoolCreate(osPool(pbcid)) ;
+	assert(pbcid) ;
+	gstcb.mp = pbcid ;
+
+	comes = osMessageCreate(osMessageQ(comes), NULL) ;
+	assert(comes) ;
+
+	SPC_a_begin() ;
+
     gpio_install_isr_service(0) ;
 
     tcpip_adapter_init();
 
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
-	ESP_LOGI("main", ">>>> app_main") ;
-#if 1
 	// ap
 	S_AP sap = {
 		.ssid = "SC635",
-		.max_connection = 2,
+		.max_connection = 1,
 		.auth = AUTH_OPEN
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
 
-#elif 0
-	CHECK_IT( TST_beg(tasto) ) ;
-
+	// Eseguo i comandi
 	while (true) {
-		osDelay(500) ;
-		if (pres) {
-			ESP_LOGI("tasto", "PREMUTO") ;
-			pres = false ;
-		}
-		if (rila) {
-			ESP_LOGI("tasto", "MOLLATO") ;
-			rila = false ;
+		osEvent event = osMessageGet(comes, osWaitForever) ;
+		assert(osEventMessage == event.status) ;
+
+		if (osEventMessage == event.status) {
+			if (TCP_MSG == event.value.v) {
+				SPC_A_RSP rsp ;
+				SPC_A_MSG * pM = SPC_a_msg() ;
+
+				switch (pM->cmd) {
+				case CMD_ECO:
+					SPC_a_resp(&rsp, pM->cmd, pM->dati, pM->dim) ;
+					CHECK_IT( rsp.dim == GST_tx(rsp.dati, rsp.dim) ) ;
+					break ;
+				default:
+					SPC_a_unk(&rsp, pM->cmd) ;
+					CHECK_IT( rsp.dim == GST_tx(rsp.dati, rsp.dim) ) ;
+					break ;
+				}
+			}
+			else {
+				UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
+
+				SPC_a_msg(msg) ;
+
+				CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
+			}
 		}
 	}
-#elif 0
-	esp_log_level_set("*", ESP_LOG_NONE) ;
-	(void) SPC_begin() ;
-#elif 0
-	LED_begin() ;
-#elif 0
-	while (true) {
-		PROD_BSN bsn = { 0 } ;
-
-		(void) PROD_read_board(&bsn) ;
-
-		PROD_PSN psn = { 0 } ;
-		(void) PROD_read_product(&psn) ;
-
-		(void) osDelay(1000) ;
-	}
-#else
-#endif
-	ESP_LOGI("main", "<<<< app_main") ;
 }

@@ -197,7 +197,8 @@ typedef struct os_semaphore_def {
 typedef struct os_pool_def {
     uint32_t pool_sz ;                 ///< number of items (elements) in the pool
     uint32_t item_sz ;                 ///< size of an item
-    void                       *pool ; ///< pointer to memory for pool
+//    void                       *pool ; ///< pointer to memory for pool
+    const char * nome ;
 } osPoolDef_t ;
 
 /// Definition structure for message queue.
@@ -530,7 +531,7 @@ osStatus osSemaphoreDelete (osSemaphoreId semaphore_id) ;
 		extern const osPoolDef_t os_pool_def_ ## name
 #else                           // define the object
 #	define osPoolDef(name, no, type)   \
-		const osPoolDef_t os_pool_def_ ## name = { (no), sizeof(type), NULL }
+		const osPoolDef_t os_pool_def_ ## name = { (no), sizeof(type), # name }
 #endif
 
 /// \brief Access a Memory Pool definition.

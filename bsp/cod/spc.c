@@ -1,5 +1,6 @@
 #include "spc_priv.h"
 #include "uspc.h"
+#include "pbc.h"
 
 #define BAUD		115200
 
@@ -19,11 +20,11 @@ static void cb_rx(uint8_t * v, int dim)
 
 	memcpy(&cmd, v, sizeof(SPC_CMD)) ;
 	if (ERR_CMD == (cmd & ERR_OK)) {
-		dim -= 2 ;
+		dim -= sizeof(SPC_CMD) ;
 
 		if (dim) {
 		    // Qua devo passare i dati
-			SPC_msg(cmd, v + 2, dim) ;
+			SPC_msg(cmd, v + sizeof(SPC_CMD), dim) ;
 		}
 		else {
 		    // Non ci sono dati: passo v per fornire memoria temporanea
@@ -161,3 +162,84 @@ void SPC_err(SPC_CMD cmd)
 
     (void) rispondi(cmd, NULL, 0) ;
 }
+
+// Alternativa ==================
+
+static PF_SPC_A_MSG pfAmsg = NULL ;
+
+static SPC_A_MSG aMsg = { 0 } ;
+
+static void acb_rx(uint8_t * v, int dim)
+{
+	SPC_CMD cmd ;
+
+	memcpy(&cmd, v, sizeof(SPC_CMD)) ;
+	if (ERR_CMD == (cmd & ERR_OK)) {
+		dim -= sizeof(SPC_CMD) ;
+
+		aMsg.cmd = cmd ;
+		aMsg.dim = dim ;
+		if (dim)
+			aMsg.dati = v + sizeof(SPC_CMD) ;
+		else {
+			aMsg.dati = NULL ;
+
+		if (pfAmsg)
+			pfAmsg() ;
+	}
+}
+
+static SPC_RX arx = {
+	.pfMsg = acb_rx
+} ;
+
+static SPC_TX atx = { 0 } ;
+
+
+void SPC_a_begin(PF_SPC_A_MSG cb)
+{
+	pfAmsg = cb ;
+
+	if (NULL == arx.rx) {
+		arx.DIM_RX = DIM_BUFFER ;
+		arx.rx = malloc(DIM_BUFFER) ;
+		assert(arx.rx) ;
+	}
+
+	if (NULL == atx.tx)  {
+		atx.DIM_TX = DIM_BUFFER ;
+		atx.tx = malloc(DIM_BUFFER) ;
+		assert(atx.tx) ;
+	}
+}
+
+void SPC_a_raw(UN_BUFFER * ub)
+{
+	esamina(&arx, ub->mem, ub->dim) ;
+}
+
+SPC_A_MSG * SPC_a_msg(void)
+{
+	return & aMsg ;
+}
+
+void SPC_a_resp(SPC_A_RSP * r, SPC_CMD cmd, const void * v, int d)
+{
+	assert(tid) ;
+	assert(r) ;
+
+	if (r) {
+	    cmd |= ERR_OK ;
+
+		atx.dimTx = 0 ;
+		atx.scritti = 0 ;
+
+		componi(&atx, cmd, v, d) ;
+
+		r->dati = atx.tx ;
+		r->dim = atx.dimTx ;
+	}
+}
+
+void SPC_a_unk(SPC_A_RSP *, SPC_CMD) ;
+void SPC_a_err(SPC_A_RSP *, SPC_CMD) ;
