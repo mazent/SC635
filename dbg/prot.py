@@ -12,6 +12,49 @@
 import struct
 import serial
 import crcmod
+import socket
+
+class _SOCK(object):
+
+    def __init__(self, ip, porta, timeout=1.0):
+        try:
+            self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.s.connect((ip, porta))
+            self.s.settimeout(timeout)
+        except:
+            self.s = None
+
+    def __del__(self):
+        self.close()
+
+    def a_posto(self):
+        return self.s is not None
+
+    def close(self):
+        if self.s is not None:
+            self.s.close()
+            self.s = None
+
+    def getSettingsDict(self):
+        return {}
+
+    def applySettingsDict(self, _):
+        pass
+
+    def flushInput(self):
+        pass
+
+    def write(self, dati):
+        self.s.sendall(dati)
+
+    def read(self, quanti):
+        try:
+            return self.s.recv(quanti)
+        except socket.timeout:
+            return None
+
+    def inWaiting(self):
+        return 0
 
 
 class PROT(object):
@@ -21,54 +64,67 @@ class PROT(object):
 
     _RSP_VALIDA = 0xC0
 
-    def __init__(self, timeout=1, **cosa):
+    def __init__(self, **cosa):
         crci = 22069
         self.crc = crcmod.Crc(0x11021, crci, False, 0)
 
-        brate = 115200
-        if 'brate' in cosa:
-            brate = cosa['brate']
-        cfh = False
-        if 'cfh' in cosa:
-            cfh = cosa['cfh']
+        timeout = 1.0
+        if 'timeout' in cosa:
+            timeout = cosa['timeout']
 
         self.mdp = 1024
         if 'mdp' in cosa:
             self.mdp = cosa['mdp']
 
-        if 'porta' in cosa:
-            # Apro come seriale
-            try:
-                self.uart = serial.Serial(cosa['porta'],
-                                          brate,
-                                          serial.EIGHTBITS,
-                                          serial.PARITY_NONE,
-                                          serial.STOPBITS_ONE,
-                                          timeout,
-                                          rtscts=cfh)
-                self.prm = self.uart.getSettingsDict()
-            except serial.SerialException as err:
-                print(err)
-                self.uart = None
-            except ValueError as err:
-                print(err)
+
+        if 'indip' in cosa:
+            # socket tcp
+            self.uart = _SOCK(cosa['indip'], 50741, timeout)
+            if not self.uart.a_posto():
+                self.uart.close()
                 self.uart = None
         else:
-            # Apro come usb
-            try:
-                self.uart = serial.serial_for_url(
-                    'hwgrep://%s:%s' %
-                    (cosa['vid'], cosa['pid']),
-                    baudrate=brate,
-                    bytesize=serial.EIGHTBITS,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    timeout=timeout,
-                    rtscts=cfh)
-                self.prm = self.uart.getSettingsDict()
-            except serial.SerialException as err:
-                print(err)
-                self.uart = None
+            # porta seriale
+            brate = 115200
+            if 'brate' in cosa:
+                brate = cosa['brate']
+            cfh = False
+            if 'cfh' in cosa:
+                cfh = cosa['cfh']
+
+            if 'porta' in cosa:
+                # classica
+                try:
+                    self.uart = serial.Serial(cosa['porta'],
+                                              brate,
+                                              serial.EIGHTBITS,
+                                              serial.PARITY_NONE,
+                                              serial.STOPBITS_ONE,
+                                              timeout,
+                                              rtscts=cfh)
+                    self.prm = self.uart.getSettingsDict()
+                except serial.SerialException as err:
+                    print(err)
+                    self.uart = None
+                except ValueError as err:
+                    print(err)
+                    self.uart = None
+            else:
+                # usb
+                try:
+                    self.uart = serial.serial_for_url(
+                        'hwgrep://%s:%s' %
+                        (cosa['vid'], cosa['pid']),
+                        baudrate=brate,
+                        bytesize=serial.EIGHTBITS,
+                        parity=serial.PARITY_NONE,
+                        stopbits=serial.STOPBITS_ONE,
+                        timeout=timeout,
+                        rtscts=cfh)
+                    self.prm = self.uart.getSettingsDict()
+                except serial.SerialException as err:
+                    print(err)
+                    self.uart = None
 
     def __del__(self):
         self.chiudi()

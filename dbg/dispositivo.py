@@ -3,24 +3,12 @@ import struct
 
 import prot
 
-NOME_UART = None
-if sys.platform.startswith("win32"):
-    NOME_UART = "COM41"
-else:
-    NOME_UART = "/dev/ttyUSB1"
-
 
 class DISPOSITIVO(object):
 
     def __init__(self, **argo):
         self.coda = None
-        try:
-            self.prot = prot.PROT(porta=argo['uart'])
-        except KeyError:
-            try:
-                self.prot = prot.PROT(vid=argo['vid'], pid=argo['pid'])
-            except KeyError:
-                self.prot = None
+        self.prot = prot.PROT(**argo)
 
     def __del__(self):
         del self.prot
