@@ -190,10 +190,13 @@ static void acb_rx(uint8_t * v, int dim)
 }
 
 static SPC_RX arx = {
-	.pfMsg = acb_rx
+	.pfMsg = acb_rx,
+	.DIM_RX = DIM_BUFFER 
 } ;
 
-static SPC_TX atx = { 0 } ;
+static SPC_TX atx = {  
+		.DIM_TX = DIM_BUFFER 
+} ;
 
 
 void SPC_a_begin(PF_SPC_A_MSG cb)
@@ -201,13 +204,11 @@ void SPC_a_begin(PF_SPC_A_MSG cb)
 	pfAmsg = cb ;
 
 	if (NULL == arx.rx) {
-		arx.DIM_RX = DIM_BUFFER ;
 		arx.rx = malloc(DIM_BUFFER) ;
 		assert(arx.rx) ;
 	}
 
 	if (NULL == atx.tx)  {
-		atx.DIM_TX = DIM_BUFFER ;
 		atx.tx = malloc(DIM_BUFFER) ;
 		assert(atx.tx) ;
 	}
