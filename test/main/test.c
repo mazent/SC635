@@ -39,7 +39,7 @@ osMessageQDef(comes, NUM_BUFFER, UN_BUFFER *) ;
 static osMessageQId comes = NULL ;
 
 // Speciale
-#define TCP_MSG		((uin32_t) 0xC1E3877F)
+#define TCP_MSG		((uint32_t) 0xC1E3877F)
 
 static void gst_conn(const char * ip, uint16_t porta)
 {
@@ -181,7 +181,7 @@ void app_main()
 	comes = osMessageCreate(osMessageQ(comes), NULL) ;
 	assert(comes) ;
 
-	SPC_a_begin() ;
+	SPC_a_begin(ip_msg) ;
 
     gpio_install_isr_service(0) ;
 
@@ -221,7 +221,7 @@ void app_main()
 			else {
 				UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
 
-				SPC_a_msg(msg) ;
+				SPC_a_raw(msg) ;
 
 				CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
 			}
