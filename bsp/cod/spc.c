@@ -198,7 +198,6 @@ static SPC_TX atx = {
 		.DIM_TX = DIM_BUFFER 
 } ;
 
-
 void SPC_a_begin(PF_SPC_A_MSG cb)
 {
 	pfAmsg = cb ;
@@ -226,7 +225,6 @@ SPC_A_MSG * SPC_a_msg(void)
 
 void SPC_a_resp(SPC_A_RSP * r, SPC_CMD cmd, const void * v, int d)
 {
-	assert(tid) ;
 	assert(r) ;
 
 	if (r) {
@@ -244,7 +242,6 @@ void SPC_a_resp(SPC_A_RSP * r, SPC_CMD cmd, const void * v, int d)
 
 void SPC_a_unk(SPC_A_RSP * r, SPC_CMD cmd)
 {
-	assert(tid) ;
 	assert(r) ;
 
 	if (r) {
@@ -262,7 +259,6 @@ void SPC_a_unk(SPC_A_RSP * r, SPC_CMD cmd)
 
 void SPC_a_err(SPC_A_RSP * r, SPC_CMD cmd)
 {
-	assert(tid) ;
 	assert(r) ;
 
 	if (r) {
