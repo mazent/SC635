@@ -30,7 +30,7 @@ static bool init(void)
 	    	ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 
 	    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-#if 0
+#if 1
 	    	// This is a read-only partition!
 	    	break ;
 #else
