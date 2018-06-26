@@ -222,6 +222,41 @@ class SC635(gui.New_Toplevel_1):
     def ecoProva(self, dummy):
         self.eco.Bottone()
 
+    # ========== PRODUZIONE ===================================================
+
+    def leggi_cp(self):
+        gui_support.cp.set("---")
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("leggi_cp",))
+
+    def inventa_cp(self):
+        gui_support.cp.set(utili.cod_prod())
+
+    def scrivi_cp(self):
+        ns = gui_support.cp.get()
+        if len(ns) == 0 or len(ns) > 12:
+            gui_support.Messaggio.set("? 1 <= cod. prodotto <= 12 ?")
+        else:
+            gui_support.Messaggio.set("Aspetta ...")
+            self.codaEXE.put(("scrivi_cp", ns))
+
+    def leggi_cs(self):
+        gui_support.cs.set("---")
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("leggi_cs",))
+
+    def inventa_cs(self):
+        gui_support.cs.set(utili.cod_scheda('???'))
+
+    def scrivi_cs(self):
+        ns = gui_support.cs.get()
+        if len(ns) == 0 or len(ns) > 11:
+            gui_support.Messaggio.set("? 1 <= cod. scheda <= 11 ?")
+        else:
+            gui_support.Messaggio.set("Aspetta ...")
+            self.codaEXE.put(("scrivi_cs", ns))
+
+
 
 
 if __name__ == '__main__':

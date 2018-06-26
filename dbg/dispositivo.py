@@ -51,3 +51,26 @@ class DISPOSITIVO(object):
         else:
             return eco == dati
 
+    # ============================================
+    # Produzione
+    # ============================================
+
+    def leggi_prodotto(self):
+        ns = self.prot.cmdVoidRsp(0x0100)
+        if ns is not None:
+            ns = ns.decode('ascii')
+        return ns
+
+    def scrivi_prodotto(self, ns):
+        ns = ns.encode('ascii')
+        return self.prot.cmdPrmVoid(0x0101, ns)
+
+    def leggi_scheda(self):
+        ns = self.prot.cmdVoidRsp(0x0102)
+        if ns is not None:
+            ns = ns.decode('ascii')
+        return ns
+
+    def scrivi_scheda(self, ns):
+        ns = ns.encode('ascii')
+        return self.prot.cmdPrmVoid(0x0103, ns)

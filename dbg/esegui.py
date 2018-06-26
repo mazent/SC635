@@ -8,9 +8,6 @@
 from __future__ import print_function
 
 import threading
-import time
-import struct
-import socket
 
 import gui_support
 
@@ -31,6 +28,11 @@ class taskEsecutore(threading.Thread):
             'ecoFinePerErrore': self._eco_fine_x_errore,
 
             'eco': self._eco,
+
+            'leggi_cp': self._cod_prod_l,
+            'scrivi_cp': self._cod_prod_s,
+            'leggi_cs': self._cod_schd_l,
+            'scrivi_cs': self._cod_schd_s
         }
 
     def run(self):
@@ -69,3 +71,32 @@ class taskEsecutore(threading.Thread):
         else:
             gui_support.Messaggio.set("Eco: ERRORE")
 
+    # ========== PRODUZIONE ===================================================
+
+    def _cod_prod_l(self, _):
+        ns = self.dispo.leggi_prodotto()
+        if ns is None:
+            gui_support.Messaggio.set("Cod. prodotto: ERRORE")
+        else:
+            gui_support.cp.set(ns)
+            gui_support.Messaggio.set("Cod. prodotto: OK")
+
+    def _cod_prod_s(self, prm):
+        if self.dispo.scrivi_prodotto(prm[1]):
+            gui_support.Messaggio.set("Cod. prodotto: OK")
+        else:
+            gui_support.Messaggio.set("Cod. prodotto: ERRORE")
+
+    def _cod_schd_l(self, _):
+        ns = self.dispo.leggi_scheda()
+        if ns is None:
+            gui_support.Messaggio.set("Cod. scheda: ERRORE")
+        else:
+            gui_support.cs.set(ns)
+            gui_support.Messaggio.set("Cod. scheda: OK")
+
+    def _cod_schd_s(self, prm):
+        if self.dispo.scrivi_scheda(prm[1]):
+            gui_support.Messaggio.set("Cod. scheda: OK")
+        else:
+            gui_support.Messaggio.set("Cod. scheda: ERRORE")

@@ -11,6 +11,7 @@ import struct
 import os
 import psutil
 import webbrowser
+import random
 
 import crcmod
 
@@ -55,7 +56,7 @@ def validaCampo(x, mini=None, maxi=None):
         if x is None:
             break
 
-        if 0 == len(x):
+        if len(x) == 0:
             break
 
         try:
@@ -307,7 +308,7 @@ def stampaTabulare(pos, dati, prec=4):
             primo += 16
             riga = testa_riga % primo
             conta = 0
-    if len(riga) > 4:
+    if conta:
         print(riga)
 
 
@@ -389,3 +390,23 @@ def http(indirizzo, crome):
 
     return crome
 
+def cod_finto(dim):
+    base = ['1', '2', '3', '4', '5', '6', '7', '8', '9']
+    cod = ''
+    while dim > 0:
+        random.shuffle(base)
+        dimp = min(dim, len(base))
+        cod = cod + ''.join(base[:dimp])
+        dim -= dimp
+
+    return cod
+
+# Crea un finto codice scheda
+
+def cod_scheda(pre):
+    return pre + 'py' + cod_finto(6)
+
+# Crea un finto codice prodotto
+
+def cod_prod():
+    return cod_finto(12)
