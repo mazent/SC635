@@ -259,7 +259,7 @@ void GST_end(void)
 	}
 }
 
-bool GST_tx(const void * buf, size_t count)
+bool GST_tx(const void * buf, uint16_t count)
 {
 	if (cln < 0)
 		return false ;

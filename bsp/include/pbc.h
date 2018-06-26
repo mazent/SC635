@@ -6,11 +6,14 @@
 #define DIM_BUFFER		2000
 #define NUM_BUFFER		10
 
+typedef enum {
+	SOCKET,
+	UART
+} ORIG ;
+
+
 typedef struct {
-	typedef enum {
-		SOCKET,
-		UART
-	} orig ;
+	ORIG orig ;
 	size_t dim ;
 	uint8_t mem[DIM_BUFFER] ;
 } UN_BUFFER ;

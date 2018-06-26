@@ -288,6 +288,17 @@
 //	}
 //}
 
+// I due bit alti indicano:
+	// Comando
+#define ERR_CMD    (0 << 14)
+	// Errore nell'esecuzione del comando
+#define ERR_EXE    (1 << 14)
+	// Errore: richiesta sconosciuta
+#define ERR_SCO    (2 << 14)
+	// Tutto bene / maschera
+#define ERR_OK     (3 << 14)
+
+
 #define INIZIO_TRAMA        0x8D
 #define FINE_TRAMA          0x8E
 #define CARATTERE_DI_FUGA   0x8F
@@ -312,7 +323,7 @@ static uint16_t aggiungi(uint8_t * btx, uint16_t dim, uint8_t x)
     return dim ;
 }
 
-static void componi(SPC_TX * ptx, SPC_CMD cmd, const void * v, int d)
+static void componi(TX_SPC * ptx, SPC_CMD cmd, const void * v, int d)
 {
     union {
         SPC_CMD cmd ;
@@ -356,10 +367,10 @@ static void componi(SPC_TX * ptx, SPC_CMD cmd, const void * v, int d)
 
 static bool rispondi(TX_SPC * ptx, SPC_CMD cmd, const void * v, int d)
 {
-	ptx.dimTx = 0 ;
-	ptx.scritti = 0 ;
+	ptx->dimTx = 0 ;
+	ptx->scritti = 0 ;
 
-	componi(&ptx, cmd, v, d) ;
+	componi(ptx, cmd, v, d) ;
 
 	return ptx->ftx(ptx->tx, ptx->dimTx) ;
 }

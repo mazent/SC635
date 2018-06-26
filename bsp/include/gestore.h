@@ -14,6 +14,6 @@ typedef struct {
 bool GST_beg(S_GST_CFG *) ;
 void GST_end(void) ;
 
-size_t GST_tx(const void *, size_t) ;
+bool GST_tx(const void *, uint16_t) ;
 
 #endif

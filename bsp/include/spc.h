@@ -18,7 +18,7 @@ typedef struct {
 	int dimRx ;
 } RX_SPC ;
 
-typedef bool (*PF_TX)(void *, uint16_t) ;
+typedef bool (*PF_TX)(const void *, uint16_t) ;
 
 typedef struct {
 	// il pacchetto finisce qui
