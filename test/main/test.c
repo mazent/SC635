@@ -167,7 +167,8 @@ static RX_SPC rxUart = {
 	.DIM_RX = DIM_BUFFER
 } ;
 static TX_SPC txUart = {
-	.DIM_TX = DIM_BUFFER
+	.DIM_TX = DIM_BUFFER,
+	.ftx = USPC_tx
 } ;
 
 

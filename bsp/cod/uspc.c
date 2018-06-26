@@ -6,46 +6,42 @@
 
 #define TAG		"uspc"
 
+#define BAUD		115200
+
 #define USPC_TXD  	(GPIO_NUM_1)
 #define USPC_RXD  	(GPIO_NUM_3)
 #define USPC_RTS  	(UART_PIN_NO_CHANGE)
 #define USPC_CTS  	(UART_PIN_NO_CHANGE)
 #define USPC_UART	UART_NUM_0
 
-#define BUF_SIZE 	1024
-
 static bool opened = false ;
+
+static S_USPC_CFG uCfg ;
 
 #define NUM_EVN		20
 static QueueHandle_t evnQ = NULL ;
 
 static osThreadId tid = NULL ;
 
-#define MAX_BUFF	(2 * BUF_SIZE)
-static union {
-	S_CIRBU c ;
-	uint8_t b[sizeof(S_CIRBU) - 1 + MAX_BUFF] ;
-} u ;
-
-static void nocb(void)
-{
-}
-
-static USPC_RX_CB cbRx = nocb ;
+//#define MAX_BUFF	(2 * DIM_BUFFER)
+//static union {
+//	S_CIRBU c ;
+//	uint8_t b[sizeof(S_CIRBU) - 1 + MAX_BUFF] ;
+//} u ;
+//
+//static void nocb(void)
+//{
+//}
+//
+//static USPC_RX_CB cbRx = nocb ;
 
 // requests from api
 
 #define S_QUIT		1
-#define S_READ		2
 
 static const uart_event_t req_quit = {
 	.type = UART_EVENT_MAX,
 	.size = S_QUIT
-} ;
-
-static const uart_event_t req_read = {
-	.type = UART_EVENT_MAX,
-	.size = S_READ
 } ;
 
 // response to api
@@ -66,10 +62,9 @@ static RESP resp = {
 osMessageQDef(respQ, 1, RESP *) ;
 static osMessageQId respQ = NULL ;
 
-
 static void uspcThd(void * v)
 {
-	static uint8_t dtmp[BUF_SIZE] ;
+	UN_BUFFER * msg = (UN_BUFFER *) osPoolAlloc(uCfg.mp) ;
 	bool cont = true ;
     uart_event_t event;
 //    size_t buffered_size;
@@ -86,11 +81,24 @@ static void uspcThd(void * v)
                 other types of events. If we take too much time on data event, the queue might
                 be full.*/
                 case UART_DATA:
-                    ESP_LOGI(TAG, "[UART DATA]: %d", event.size);
-                    uart_read_bytes(USPC_UART, dtmp, event.size, portMAX_DELAY);
-                    CIRBU_ins(&u.c, dtmp, event.size) ;
-                    cbRx() ;
-                    //uart_write_bytes(USPC_UART, (char *) dtmp, event.size);
+                	do {
+    					if (NULL == msg) {
+    						// Riprovo
+    						msg = (UN_BUFFER *) osPoolAlloc(uCfg.mp) ;
+
+    						ESP_LOGE(TAG, "buffer esauriti") ;
+    						if (NULL == msg)
+    							break ;
+    					}
+    					msg->orig = SOCKET ;
+
+                        ESP_LOGI(TAG, "[UART DATA]: %d", event.size);
+
+                        msg->dim = uart_read_bytes(USPC_UART, msg->mem, event.size, portMAX_DELAY) ;
+
+                        uCfg.msg(msg) ;
+                        msg = (UN_BUFFER *) osPoolAlloc(uCfg.mp) ;
+                	} while (false) ;
                     break;
 				//Event of UART RX break detected
 				case UART_BREAK:
@@ -147,10 +155,6 @@ static void uspcThd(void * v)
                 	case S_QUIT:
                 		cont = false ;
                 		break ;
-                	case S_READ:
-                		resp.dim = CIRBU_ext(&u.c, (uint8_t *) resp.buf, resp.dim) ;
-                		CHECK_IT( osOK == osMessagePut(resp.waitHere, true, 0) ) ;
-                		break ;
                 	}
                 	break ;
                 //Others
@@ -168,34 +172,36 @@ static void uspcThd(void * v)
 }
 
 
-#define STACK_SIZE		2000	
+#define STACK_SIZE		2000
 osThreadDef(uspcThd, osPriorityNormal, 0, STACK_SIZE) ;
 
-bool USPC_open(uint32_t baud, USPC_RX_CB cb)
-{
-	uart_config_t uart_config = {
-			.baud_rate = baud,
-			.data_bits = UART_DATA_8_BITS,
-			.parity    = UART_PARITY_DISABLE,
-			.stop_bits = UART_STOP_BITS_1,
-			.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-	};
 
+static const uart_config_t uart_config = {
+	.baud_rate = BAUD,
+	.data_bits = UART_DATA_8_BITS,
+	.parity    = UART_PARITY_DISABLE,
+	.stop_bits = UART_STOP_BITS_1,
+	.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+};
+
+
+bool USPC_open(S_USPC_CFG * cfg)
+{
 	do {
 		if (opened)
 			break ;
 
-		CIRBU_begin(&u.c, MAX_BUFF) ;
+		uCfg = *cfg ;
 
 		esp_err_t err = uart_param_config(USPC_UART, &uart_config);
 		if (err != ESP_OK)
 			break ;
-		
+
 		err = uart_set_pin(USPC_UART, USPC_TXD, USPC_RXD, USPC_RTS, USPC_CTS);
 		if (err != ESP_OK)
 			break ;
-		
-		err = uart_driver_install(USPC_UART, BUF_SIZE, 0, NUM_EVN, &evnQ, 0);
+
+		err = uart_driver_install(USPC_UART, DIM_BUFFER, 0, NUM_EVN, &evnQ, 0);
 		if (err != ESP_OK)
 			break ;
 
@@ -220,24 +226,20 @@ bool USPC_open(uint32_t baud, USPC_RX_CB cb)
 				break ;
 		}
 
-
-		if (cb)
-			cbRx = cb ;
-
 		opened = true ;
-		
+
 	} while (false) ;
-	
+
 	return opened ;
 }
 
 void USPC_close(void)
 {
 	if (opened) {
-		osEvent evn = osMessageGet(respQ, osWaitForever) ; 
-		assert(osEventMessage == evn.status) ; 
+		osEvent evn = osMessageGet(respQ, osWaitForever) ;
+		assert(osEventMessage == evn.status) ;
 
-		if (osEventMessage == evn.status) { 
+		if (osEventMessage == evn.status) {
 			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_quit, portMAX_DELAY)) ;
 
 			evn = osMessageGet(resp.waitHere, osWaitForever) ;
@@ -245,15 +247,16 @@ void USPC_close(void)
 
 			(void) uart_driver_delete(USPC_UART) ;
 			evnQ = NULL ;
-			cbRx = nocb ;
 
 			opened = false ;
 		}
 	}
 }
 
-void USPC_tx(const void * v, uint16_t dim)
+bool USPC_tx(const void * v, uint16_t dim)
 {
+	bool esito = false ;
+
 	if (!opened) {
 	}
 	else if (NULL == v) {
@@ -261,37 +264,39 @@ void USPC_tx(const void * v, uint16_t dim)
 	else if (0 == dim) {
 	}
 	else
-		uart_write_bytes(USPC_UART, (const char *) v, dim) ;
+		esito = dim == uart_write_bytes(USPC_UART, (const char *) v, dim) ;
+
+	return esito ;
 }
 
-uint16_t USPC_rx(void * v, uint16_t dim)
-{
-	uint16_t recvd = 0 ;
-
-	if (opened) {
-		osEvent evn = osMessageGet(respQ, osWaitForever) ;
-		assert(osEventMessage == evn.status) ;
-
-		if (osEventMessage == evn.status) {
-			// Now resp is mine
-			resp.buf = v ;
-			resp.dim = dim ;
-
-			// Send the request
-			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_read, portMAX_DELAY)) ;
-
-			// Wait for the job
-			evn = osMessageGet(resp.waitHere, osWaitForever) ;
-			assert(osEventMessage == evn.status) ;
-
-			if (osEventMessage == evn.status) {
-				recvd = resp.dim ;
-
-				// For the next customer
-				CHECK_IT( osOK == osMessagePut(respQ, (uint32_t) &resp, 0) ) ;
-			}
-		}
-	}
-
-	return recvd ;
-}
+//uint16_t USPC_rx(void * v, uint16_t dim)
+//{
+//	uint16_t recvd = 0 ;
+//
+//	if (opened) {
+//		osEvent evn = osMessageGet(respQ, osWaitForever) ;
+//		assert(osEventMessage == evn.status) ;
+//
+//		if (osEventMessage == evn.status) {
+//			// Now resp is mine
+//			resp.buf = v ;
+//			resp.dim = dim ;
+//
+//			// Send the request
+//			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_read, portMAX_DELAY)) ;
+//
+//			// Wait for the job
+//			evn = osMessageGet(resp.waitHere, osWaitForever) ;
+//			assert(osEventMessage == evn.status) ;
+//
+//			if (osEventMessage == evn.status) {
+//				recvd = resp.dim ;
+//
+//				// For the next customer
+//				CHECK_IT( osOK == osMessagePut(respQ, (uint32_t) &resp, 0) ) ;
+//			}
+//		}
+//	}
+//
+//	return recvd ;
+//}
