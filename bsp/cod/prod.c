@@ -26,11 +26,8 @@ static bool init(void)
 			break ;
 
 	    esp_err_t err = nvs_flash_init_partition(PARTITION) ;
-	    if (err != ESP_OK)
-	    	ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
-
 	    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-#if 1
+#if 0
 	    	// This is a read-only partition!
 	    	break ;
 #else
