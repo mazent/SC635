@@ -23,18 +23,6 @@ static QueueHandle_t evnQ = NULL ;
 
 static osThreadId tid = NULL ;
 
-//#define MAX_BUFF	(2 * DIM_BUFFER)
-//static union {
-//	S_CIRBU c ;
-//	uint8_t b[sizeof(S_CIRBU) - 1 + MAX_BUFF] ;
-//} u ;
-//
-//static void nocb(void)
-//{
-//}
-//
-//static USPC_RX_CB cbRx = nocb ;
-
 // requests from api
 
 #define S_QUIT		1
@@ -68,6 +56,8 @@ static void uspcThd(void * v)
 	bool cont = true ;
     uart_event_t event;
 //    size_t buffered_size;
+
+    esp_log_level_set(TAG, ESP_LOG_NONE) ;
 
     // Ok, i'm ready
     CHECK_IT( osOK == osMessagePut(respQ, (uint32_t) &resp, 0) ) ;
@@ -268,35 +258,3 @@ bool USPC_tx(const void * v, uint16_t dim)
 
 	return esito ;
 }
-
-//uint16_t USPC_rx(void * v, uint16_t dim)
-//{
-//	uint16_t recvd = 0 ;
-//
-//	if (opened) {
-//		osEvent evn = osMessageGet(respQ, osWaitForever) ;
-//		assert(osEventMessage == evn.status) ;
-//
-//		if (osEventMessage == evn.status) {
-//			// Now resp is mine
-//			resp.buf = v ;
-//			resp.dim = dim ;
-//
-//			// Send the request
-//			CHECK_IT(pdTRUE == xQueueSend(evnQ, &req_read, portMAX_DELAY)) ;
-//
-//			// Wait for the job
-//			evn = osMessageGet(resp.waitHere, osWaitForever) ;
-//			assert(osEventMessage == evn.status) ;
-//
-//			if (osEventMessage == evn.status) {
-//				recvd = resp.dim ;
-//
-//				// For the next customer
-//				CHECK_IT( osOK == osMessagePut(respQ, (uint32_t) &resp, 0) ) ;
-//			}
-//		}
-//	}
-//
-//	return recvd ;
-//}
