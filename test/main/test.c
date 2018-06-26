@@ -227,9 +227,8 @@ void app_main()
 
     CHECK_IT( SPC_ini_rx(&rxUart) ) ;
     CHECK_IT( SPC_ini_tx(&txUart) ) ;
-
-//    CHECK_IT( SPC_begin() ) ;
-//    SPC_a_begin(ip_msg) ;
+    	// uart
+    CHECK_IT( USPC_open(&ucfg) ) ;
 		// ap
 	S_AP sap = {
 		.ssid = "SC635",
