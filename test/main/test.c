@@ -59,6 +59,10 @@ static S_GST_CFG gstcb = {
 	.scon = gst_scon
 } ;
 
+static S_USPC_CFG ucfg = {
+	.msg = gst_msg
+} ;
+
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
 	UNUSED(ctx) ;
@@ -205,6 +209,7 @@ void app_main()
 	pbcid = osPoolCreate(osPool(pbcid)) ;
 	assert(pbcid) ;
 	gstcb.mp = pbcid ;
+	ucfg.mp = pbcid ;
 
 	comes = osMessageCreate(osMessageQ(comes), NULL) ;
 	assert(comes) ;

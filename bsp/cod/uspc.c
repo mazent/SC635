@@ -90,7 +90,7 @@ static void uspcThd(void * v)
     						if (NULL == msg)
     							break ;
     					}
-    					msg->orig = SOCKET ;
+    					msg->orig = UART ;
 
                         ESP_LOGI(TAG, "[UART DATA]: %d", event.size);
 
