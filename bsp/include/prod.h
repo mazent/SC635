@@ -22,6 +22,9 @@ typedef struct {
 
 
 bool PROD_read_board(PROD_BSN *) ;
+bool PROD_write_board(const char *) ;
+
 bool PROD_read_product(PROD_PSN *) ;
+bool PROD_write_product(const char *) ;
 
 #endif

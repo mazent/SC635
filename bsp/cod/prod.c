@@ -71,6 +71,33 @@ bool PROD_read_board(PROD_BSN * p)
     return esito ;
 }
 
+bool PROD_write_board(const char * p)
+{
+	bool esito = false ;
+	nvs_handle h = INVALID_HANDLE ;
+
+	do {
+		if (NULL == p)
+			break ;
+
+		if ( !init() )
+			break ;
+
+		esp_err_t err = nvs_open_from_partition(PARTITION, NAMESPACE, NVS_READWRITE, &h) ;
+		if (err != ESP_OK)
+			break ;
+
+		err = nvs_set_str(h, KEY_BSN, p) ;
+		esito = err == ESP_OK ;
+	} while (false) ;
+
+	if (INVALID_HANDLE != h)
+		nvs_close(h) ;
+
+    return esito ;
+
+}
+
 bool PROD_read_product(PROD_PSN * p)
 {
 	bool esito = false ;
@@ -88,6 +115,32 @@ bool PROD_read_product(PROD_PSN * p)
 			break ;
 
 		err = nvs_get_str(h, KEY_PSN, p->psn, &p->len) ;
+		esito = err == ESP_OK ;
+	} while (false) ;
+
+	if (INVALID_HANDLE != h)
+		nvs_close(h) ;
+
+    return esito ;
+}
+
+bool PROD_write_product(const char * p)
+{
+	bool esito = false ;
+	nvs_handle h = INVALID_HANDLE ;
+
+	do {
+		if (NULL == p)
+			break ;
+
+		if ( !init() )
+			break ;
+
+		esp_err_t err = nvs_open_from_partition(PARTITION, NAMESPACE, NVS_READWRITE, &h) ;
+		if (err != ESP_OK)
+			break ;
+
+		err = nvs_set_str(h, KEY_PSN, p) ;
 		esito = err == ESP_OK ;
 	} while (false) ;
 

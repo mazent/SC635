@@ -12,23 +12,9 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 
+extern void esegui(RX_SPC *, TX_SPC *) ;
 
 static const char *TAG = "test";
-
-#define CMD_ECO		((SPC_CMD) 0x0000)
-
-//void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
-//{
-//	switch (cmd) {
-//	case CMD_ECO:
-//		SPC_resp(cmd, dati, dim) ;
-//		break ;
-//	default:
-//		SPC_unk(cmd) ;
-//		break ;
-//	}
-//}
-
 
 // memoria per i messaggi
 osPoolDef(pbcid, NUM_BUFFER, UN_BUFFER) ;
@@ -174,25 +160,6 @@ static TX_SPC txUart = {
 	.DIM_TX = DIM_BUFFER,
 	.ftx = USPC_tx
 } ;
-
-
-static void esegui(RX_SPC * rx, TX_SPC * tx)
-{
-	SPC_CMD cmd ;
-	uint8_t * dati = rx->rx + sizeof(SPC_CMD) ;
-	int dim = rx->dimRx - sizeof(SPC_CMD) ;
-
-	memcpy(&cmd, rx->rx, sizeof(SPC_CMD)) ;
-
-	switch (cmd) {
-	case CMD_ECO:
-		SPC_resp(tx, cmd, dati, dim) ;
-		break ;
-	default:
-		SPC_unk(tx, cmd) ;
-		break ;
-	}
-}
 
 void app_main()
 {
