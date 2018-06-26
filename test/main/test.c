@@ -17,17 +17,17 @@ static const char *TAG = "test";
 
 #define CMD_ECO		((SPC_CMD) 0x0000)
 
-void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
-{
-	switch (cmd) {
-	case CMD_ECO:
-		SPC_resp(cmd, dati, dim) ;
-		break ;
-	default:
-		SPC_unk(cmd) ;
-		break ;
-	}
-}
+//void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
+//{
+//	switch (cmd) {
+//	case CMD_ECO:
+//		SPC_resp(cmd, dati, dim) ;
+//		break ;
+//	default:
+//		SPC_unk(cmd) ;
+//		break ;
+//	}
+//}
 
 
 // memoria per i messaggi
@@ -155,13 +155,20 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 	return ESP_OK;
 }
 
-static RX_SPC rxSock = { 0 } ;
+static RX_SPC rxSock = {
+	.DIM_RX = DIM_BUFFER
+} ;
 static TX_SPC txSock = {
+	.DIM_TX = DIM_BUFFER,
 	.ftx = GST_tx
 } ;
 
-static RX_SPC rxUart = { 0 } ;
-static TX_SPC txUart = { 0 } ;
+static RX_SPC rxUart = {
+	.DIM_RX = DIM_BUFFER
+} ;
+static TX_SPC txUart = {
+	.DIM_TX = DIM_BUFFER
+} ;
 
 
 static void esegui(RX_SPC * rx, TX_SPC * tx)
