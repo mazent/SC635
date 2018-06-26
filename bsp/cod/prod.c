@@ -5,6 +5,8 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+static const char * TAG = "prod";
+
 // cfr sc635.csv
 #define PARTITION		"prod"
 
@@ -24,6 +26,9 @@ static bool init(void)
 			break ;
 
 	    esp_err_t err = nvs_flash_init_partition(PARTITION) ;
+	    if (err != ESP_OK)
+	    	ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
+
 	    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
 #if 0
 	    	// This is a read-only partition!
@@ -31,11 +36,15 @@ static bool init(void)
 #else
 	        // partition was truncated and needs to be erased
 	        err = nvs_flash_erase_partition(PARTITION) ;
-	        if (err != ESP_OK)
+	        if (err != ESP_OK) {
+	        	ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 	        	break ;
+	        }
 
 	        // Retry nvs_flash_init
 	        err = nvs_flash_init_partition(PARTITION) ;
+		    if (err != ESP_OK)
+		    	ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 #endif
 	    }
         inited = err == ESP_OK ;
@@ -58,10 +67,15 @@ bool PROD_read_board(PROD_BSN * p)
 			break ;
 
 		esp_err_t err = nvs_open_from_partition(PARTITION, NAMESPACE, NVS_READONLY, &h) ;
-		if (err != ESP_OK)
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 			break ;
+		}
 
 		err = nvs_get_str(h, KEY_BSN, p->bsn, &p->len) ;
+		if (err != ESP_OK)
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
+
 		esito = err == ESP_OK ;
 	} while (false) ;
 
@@ -84,10 +98,14 @@ bool PROD_write_board(const char * p)
 			break ;
 
 		esp_err_t err = nvs_open_from_partition(PARTITION, NAMESPACE, NVS_READWRITE, &h) ;
-		if (err != ESP_OK)
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 			break ;
+		}
 
 		err = nvs_set_str(h, KEY_BSN, p) ;
+		if (err != ESP_OK)
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 		esito = err == ESP_OK ;
 	} while (false) ;
 
