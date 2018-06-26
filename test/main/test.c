@@ -16,18 +16,18 @@
 static const char *TAG = "test";
 
 #define CMD_ECO		((SPC_CMD) 0x0000)
-//
-//void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
-//{
-//	switch (cmd) {
-//	case CMD_ECO:
-//		SPC_resp(cmd, dati, dim) ;
-//		break ;
-//	default:
-//		SPC_unk(cmd) ;
-//		break ;
-//	}
-//}
+
+void SPC_msg(SPC_CMD cmd, uint8_t * dati, int dim)
+{
+	switch (cmd) {
+	case CMD_ECO:
+		SPC_resp(cmd, dati, dim) ;
+		break ;
+	default:
+		SPC_unk(cmd) ;
+		break ;
+	}
+}
 
 
 // memoria per i messaggi
@@ -37,9 +37,6 @@ static osPoolId pbcid = NULL ;
 // coda dei messaggi
 osMessageQDef(comes, NUM_BUFFER, UN_BUFFER *) ;
 static osMessageQId comes = NULL ;
-
-// Speciale
-#define TCP_MSG		((uint32_t) 0xC1E3877F)
 
 static void gst_conn(const char * ip, uint16_t porta)
 {
@@ -158,9 +155,31 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 	return ESP_OK;
 }
 
-static void ip_msg(void)
+static RX_SPC rxSock = { 0 } ;
+static TX_SPC txSock = {
+	.ftx = GST_tx
+} ;
+
+static RX_SPC rxUart = { 0 } ;
+static TX_SPC txUart = { 0 } ;
+
+
+static void esegui(RX_SPC * rx, TX_SPC * tx)
 {
-	CHECK_IT(osOK == osMessagePut(comes, TCP_MSG, 0)) ;
+	SPC_CMD cmd ;
+	uint8_t * dati = rx->rx + sizeof(SPC_CMD) ;
+	int dim = rx->dimRx - sizeof(SPC_CMD) ;
+
+	memcpy(&cmd, rx->rx, sizeof(SPC_CMD)) ;
+
+	switch (cmd) {
+	case CMD_ECO:
+		SPC_resp(tx, cmd, dati, dim) ;
+		break ;
+	default:
+		SPC_unk(tx, cmd) ;
+		break ;
+	}
 }
 
 void app_main()
@@ -174,6 +193,7 @@ void app_main()
 		ESP_ERROR_CHECK( nvs_flash_init() );
 	}
 
+	// Scambio messaggi
 	pbcid = osPoolCreate(osPool(pbcid)) ;
 	assert(pbcid) ;
 	gstcb.mp = pbcid ;
@@ -181,15 +201,23 @@ void app_main()
 	comes = osMessageCreate(osMessageQ(comes), NULL) ;
 	assert(comes) ;
 
-	SPC_a_begin(ip_msg) ;
-
+	// Varie
     gpio_install_isr_service(0) ;
 
     tcpip_adapter_init();
 
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
-	// ap
+    // Comunicazione
+    CHECK_IT( SPC_ini_rx(&rxSock) ) ;
+    CHECK_IT( SPC_ini_tx(&txSock) ) ;
+
+    CHECK_IT( SPC_ini_rx(&rxUart) ) ;
+    CHECK_IT( SPC_ini_tx(&txUart) ) ;
+
+//    CHECK_IT( SPC_begin() ) ;
+//    SPC_a_begin(ip_msg) ;
+		// ap
 	S_AP sap = {
 		.ssid = "SC635",
 		.max_connection = 1,
@@ -203,28 +231,19 @@ void app_main()
 		assert(osEventMessage == event.status) ;
 
 		if (osEventMessage == event.status) {
-			if (TCP_MSG == event.value.v) {
-				SPC_A_RSP rsp ;
-				SPC_A_MSG * pM = SPC_a_msg() ;
+			UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
+			RX_SPC * prx = &rxUart ;
+			TX_SPC * ptx = &txUart ;
 
-				switch (pM->cmd) {
-				case CMD_ECO:
-					SPC_a_resp(&rsp, pM->cmd, pM->dati, pM->dim) ;
-					CHECK_IT( rsp.dim == GST_tx(rsp.dati, rsp.dim) ) ;
-					break ;
-				default:
-					SPC_a_unk(&rsp, pM->cmd) ;
-					CHECK_IT( rsp.dim == GST_tx(rsp.dati, rsp.dim) ) ;
-					break ;
-				}
+			if (SOCKET == msg->orig) {
+				prx = &rxSock ;
+				ptx = &txSock ;
 			}
-			else {
-				UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
 
-				SPC_a_raw(msg) ;
+			if ( SPC_esamina(prx, msg) )
+				esegui(prx, ptx) ;
 
-				CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
-			}
+			CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
 		}
 	}
 }

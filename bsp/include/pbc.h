@@ -7,6 +7,10 @@
 #define NUM_BUFFER		10
 
 typedef struct {
+	typedef enum {
+		SOCKET,
+		UART
+	} orig ;
 	size_t dim ;
 	uint8_t mem[DIM_BUFFER] ;
 } UN_BUFFER ;

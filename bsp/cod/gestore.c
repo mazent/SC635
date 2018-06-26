@@ -179,6 +179,7 @@ static void gstSRV(void * v)
 								if (NULL == msg)
 									break ;
 							}
+							msg->orig = SOCKET ;
 
 							int nbytes = read (i, msg->mem, DIM_BUFFER);
 							if (nbytes <= 0) {
@@ -214,15 +215,23 @@ bool GST_beg(S_GST_CFG * pCB)
 	bool esito = false ;
 
 	do {
+		assert(pCB) ;
 		if (NULL == pCB)
 			break ;
 
+		assert(pCB->mp) ;
 		if (NULL == pCB->mp)
 			break ;
+
+		assert(pCB->conn) ;
 		if (NULL == pCB->conn)
 			break ;
+
+		assert(pCB->scon) ;
 		if (NULL == pCB->scon)
 			break ;
+
+		assert(pCB->msg) ;
 		if (NULL == pCB->msg)
 			break ;
 
@@ -250,15 +259,15 @@ void GST_end(void)
 	}
 }
 
-size_t GST_tx(const void * buf, size_t count)
+bool GST_tx(const void * buf, size_t count)
 {
 	if (cln < 0)
-		return 0 ;
+		return false ;
 	else {
 		int s = write(cln, buf, count) ;
 		if (s < 0)
-			return 0 ;
+			return false ;
 		else
-			return s ;
+			return s == count ;
 	}
 }
