@@ -44,7 +44,7 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 			SPC_err(tx, cmd) ;
 		else {
 			dati[dim] = 0 ;
-			if ( PROD_write_product(dati) )
+			if ( PROD_write_product((char *) dati) )
 				SPC_resp(tx, cmd, NULL, 0) ;
 			else
 				SPC_err(tx, cmd) ;
@@ -61,14 +61,14 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 		else
 			SPC_err(tx, cmd) ;
 		break ;
-	case CMD_CODP_S:
+	case CMD_CODS_S:
 		if (0 == dim)
 			SPC_err(tx, cmd) ;
 		else if (dim >= BOARD_SERIAL_NUMBER_DIM)
 			SPC_err(tx, cmd) ;
 		else {
 			dati[dim] = 0 ;
-			if ( PROD_write_board(dati) )
+			if ( PROD_write_board((char *) dati) )
 				SPC_resp(tx, cmd, NULL, 0) ;
 			else
 				SPC_err(tx, cmd) ;
