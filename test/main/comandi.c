@@ -1,6 +1,7 @@
 #include "spc.h"
 #include "prod.h"
 #include "cavo.h"
+#include "mobd.h"
 
 extern int cntTst ;
 
@@ -14,6 +15,8 @@ extern int cntTst ;
 #define CMD_TST_Z 	((SPC_CMD) 0x0200)
 #define CMD_TST_L 	((SPC_CMD) 0x0201)
 #define CMD_CRJ_I 	((SPC_CMD) 0x0202)
+#define CMD_MOBD  	((SPC_CMD) 0x0203)
+#define CMD_ETH   	((SPC_CMD) 0x0204)
 
 // Sala di lettura
 static union {
@@ -96,10 +99,28 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 		else
 			SPC_err(tx, cmd) ;
 		break ;
+
 	case CMD_CRJ_I:
 		if (0 == dim) {
 			bool x = CRJ_in() ;
 			SPC_resp(tx, cmd, &x, 1) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+
+	case CMD_MOBD:
+		if (1 == dim) {
+			MOBD_mobd_eth(0 != dati[0]) ;
+			SPC_resp(tx, cmd, NULL, 0) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_ETH:
+		if (1 == dim) {
+			MOBD_eth_esp32(0 != dati[0]) ;
+			SPC_resp(tx, cmd, NULL, 0) ;
 		}
 		else
 			SPC_err(tx, cmd) ;

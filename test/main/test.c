@@ -6,6 +6,7 @@
 #include "gestore.h"
 #include "uspc.h"
 #include "cavo.h"
+#include "mobd.h"
 
 #include "driver/gpio.h"
 
@@ -207,6 +208,7 @@ void app_main()
     // Scheda
     CHECK_IT( TST_beg(tasto) ) ;
     CHECK_IT( CRJ_beg(cavo) ) ;
+    CHECK_IT( MOBD_beg() ) ;
 
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;

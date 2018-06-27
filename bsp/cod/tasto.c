@@ -61,6 +61,8 @@ void TST_end(void)
 {
 	gpio_isr_handler_remove(BUTTON) ;
 
+	CHECK_IT(ESP_OK == gpio_reset_pin(BUTTON)) ;
+
 	cbTst = tst_vuota ;
 }
 
