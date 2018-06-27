@@ -36,7 +36,10 @@ class taskEsecutore(threading.Thread):
 
             'tst_zero': self._tst_azzera,
             'tst_lgg': self._tst_leggi,
-            'cavo': self._cavo_presente
+            'cavo': self._cavo_presente,
+            'mobd': self._mobd,
+            'eth': self._ethernet,
+            'led': self._led
         }
 
     def run(self):
@@ -126,6 +129,23 @@ class taskEsecutore(threading.Thread):
         if cavo is None:
             gui_support.Messaggio.set("Cavo: ERRORE")
         else:
-            #gui_support.cavo.set('1' if cavo else '0')
             gui_support.cavo.set(cavo)
             gui_support.Messaggio.set("Cavo: OK")
+
+    def _mobd(self, prm):
+        if self.dispo.mobd(prm[1]):
+            gui_support.Messaggio.set("MOBD: OK")
+        else:
+            gui_support.Messaggio.set("MOBD: ERRORE")
+
+    def _ethernet(self, prm):
+        if self.dispo.ethernet(prm[1]):
+            gui_support.Messaggio.set("Eth: OK")
+        else:
+            gui_support.Messaggio.set("Eth: ERRORE")
+
+    def _led(self, prm):
+        if self.dispo.led(prm[1]):
+            gui_support.Messaggio.set("Led: OK")
+        else:
+            gui_support.Messaggio.set("Led: ERRORE")

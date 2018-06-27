@@ -269,6 +269,21 @@ class SC635(gui.New_Toplevel_1):
         gui_support.Messaggio.set("Aspetta ...")
         self.codaEXE.put(("cavo",))
 
+    def mobd(self):
+        eth = '1' == gui_support.io33.get()
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("mobd", eth))
+
+    def eth(self):
+        esp32 = '1' == gui_support.io5.get()
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("eth", esp32))
+
+    def led(self):
+        rosso = '1' == gui_support.led.get()
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("led", rosso))
+
 
 
 if __name__ == '__main__':
@@ -280,6 +295,9 @@ if __name__ == '__main__':
 
     gui_support.Messaggio.set("Pronto!")
     gui_support.cavo.set(0)
+    gui_support.io33.set(0)
+    gui_support.io5.set(0)
+    gui_support.led.set(0)
 
     FINESTRA = SC635(ROOT)
     gui_support.init(ROOT, FINESTRA)

@@ -93,3 +93,21 @@ class DISPOSITIVO(object):
         if cavo is not None:
             cavo = cavo[0] != 0
         return cavo
+
+    def mobd(self, eth):
+        prm = bytearray([0])
+        if eth:
+            prm[0] = 1
+        return self.prot.cmdPrmVoid(0x0203, prm)
+
+    def ethernet(self, esp32):
+        prm = bytearray([0])
+        if esp32:
+            prm[0] = 1
+        return self.prot.cmdPrmVoid(0x0204, prm)
+
+    def led(self, rosso):
+        prm = bytearray([0])
+        if rosso:
+            prm[0] = 1
+        return self.prot.cmdPrmVoid(0x0205, prm)
