@@ -5,6 +5,7 @@
 #include "ap.h"
 #include "gestore.h"
 #include "uspc.h"
+#include "cavo.h"
 
 #include "driver/gpio.h"
 
@@ -25,6 +26,7 @@ osMessageQDef(comes, 2 * NUM_BUFFER, UN_BUFFER *) ;
 static osMessageQId comes = NULL ;
 	// speciali
 #define MSG_TASTO		0x90B56557
+#define MSG_CAVO		0xCA8AB86D
 
 int cntTst = 0 ;
 
@@ -33,6 +35,10 @@ static void tasto(void)
 	CHECK_IT(osOK == osMessagePut(comes, MSG_TASTO, 0)) ;
 }
 
+static void cavo(void)
+{
+	CHECK_IT(osOK == osMessagePut(comes, MSG_CAVO, 0)) ;
+}
 
 static void gst_conn(const char * ip, uint16_t porta)
 {
@@ -200,6 +206,7 @@ void app_main()
 
     // Scheda
     CHECK_IT( TST_beg(tasto) ) ;
+    CHECK_IT( CRJ_beg(cavo) ) ;
 
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;
@@ -227,6 +234,8 @@ void app_main()
 			switch (event.value.v) {
 			case MSG_TASTO:
 				++cntTst ;
+				break ;
+			case MSG_CAVO:
 				break ;
 			default: {
 					// Comando

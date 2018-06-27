@@ -2,7 +2,7 @@
 
 /*
  * Il bottone viene mosso da un TPS3421EG,
- * cre crea un prispolo basso
+ * che crea un prispolo basso
  */
 
 #include "driver/gpio.h"

@@ -1,5 +1,6 @@
 #include "spc.h"
 #include "prod.h"
+#include "cavo.h"
 
 extern int cntTst ;
 
@@ -12,6 +13,7 @@ extern int cntTst ;
 
 #define CMD_TST_Z 	((SPC_CMD) 0x0200)
 #define CMD_TST_L 	((SPC_CMD) 0x0201)
+#define CMD_CRJ_I 	((SPC_CMD) 0x0202)
 
 // Sala di lettura
 static union {
@@ -91,6 +93,14 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 	case CMD_TST_L:
 		if (0 == dim)
 			SPC_resp(tx, cmd, &cntTst, 1) ;
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_CRJ_I:
+		if (0 == dim) {
+			bool x = CRJ_in() ;
+			SPC_resp(tx, cmd, &x, 1) ;
+		}
 		else
 			SPC_err(tx, cmd) ;
 		break ;
