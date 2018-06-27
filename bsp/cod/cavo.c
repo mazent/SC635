@@ -1,4 +1,4 @@
-#include "tasto.h"
+#include "cavo.h"
 
 /*
  * Presenza del cavo ethernet nel
@@ -28,9 +28,13 @@ static void vuota(void)
 
 static PF_CRJ cbCRJ = vuota ;
 
+bool crj = false ;
+
 static void IRAM_ATTR cavo_isr(void * v)
 {
 	UNUSED(v) ;
+
+	crj = 0 == gpio_get_level(CAVORJ45) ;
 
 	cbCRJ() ;
 }
