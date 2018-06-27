@@ -17,6 +17,7 @@ extern int cntTst ;
 #define CMD_CRJ_I 	((SPC_CMD) 0x0202)
 #define CMD_MOBD  	((SPC_CMD) 0x0203)
 #define CMD_ETH   	((SPC_CMD) 0x0204)
+#define CMD_LED   	((SPC_CMD) 0x0205)
 
 // Sala di lettura
 static union {
@@ -120,6 +121,15 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 	case CMD_ETH:
 		if (1 == dim) {
 			MOBD_eth_esp32(0 != dati[0]) ;
+			SPC_resp(tx, cmd, NULL, 0) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+
+	case CMD_LED:
+		if (1 == dim) {
+			LED_rosso(0 != dati[0]) ;
 			SPC_resp(tx, cmd, NULL, 0) ;
 		}
 		else

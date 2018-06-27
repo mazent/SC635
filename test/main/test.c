@@ -1,5 +1,4 @@
 #include "prod.h"
-#include "led.h"
 #include "spc.h"
 #include "tasto.h"
 #include "ap.h"
@@ -7,6 +6,7 @@
 #include "uspc.h"
 #include "cavo.h"
 #include "mobd.h"
+#include "led.h"
 
 #include "driver/gpio.h"
 
@@ -209,6 +209,7 @@ void app_main()
     CHECK_IT( TST_beg(tasto) ) ;
     CHECK_IT( CRJ_beg(cavo) ) ;
     CHECK_IT( MOBD_beg() ) ;
+    CHECK_IT( LED_beg() ) ;
 
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;

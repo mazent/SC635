@@ -1,59 +1,30 @@
-#include "bsp.h"
 #include "led.h"
 
 #include "driver/gpio.h"
 
-#include "esp_log.h"
+#define LED_SEL		GPIO_SEL_33
+#define LED    		GPIO_NUM_33
 
-#define LED_R_Vneg		GPIO_NUM_4
+static const gpio_config_t cfg = {
+	.pin_bit_mask = LED_SEL,
+	.mode = GPIO_MODE_OUTPUT,
+	.intr_type = GPIO_INTR_DISABLE,
+	.pull_up_en = GPIO_PULLUP_DISABLE,
+	.pull_down_en = GPIO_PULLDOWN_DISABLE
+};
 
-static osThreadId tid = NULL ;
-static int lev = 0 ;
 
-#define RIPOSO_MS		1000
-
-#define SIG_QUIT		(1 << 0)
-
-static void led(void * v)
+bool LED_beg(void)
 {
-	UNUSED(v) ;
-
-	while (true) {
-		osEvent evn = osSignalWait(0, RIPOSO_MS) ;
-
-		if (osEventTimeout == evn.status) {
-			int curlev = gpio_get_level(LED_R_Vneg) ;
-			if (curlev != lev) {
-				ESP_LOGE("LED", "cur %d != %d\n", curlev, lev) ;
-			}
-			lev = 0 == lev ? 1 : 0 ;
-			gpio_set_level(LED_R_Vneg, lev) ;
-			ESP_LOGI("LED", "Imposto %d", lev);
-		}
-		else if (SIG_QUIT & evn.value.signals)
-			break ;
-	}
-
-	// So I'm dead
-	tid = NULL ;
-	(void) osThreadTerminate(NULL) ;
-}
-
-void LED_begin(void)
-{
-	if (NULL == tid) {
-	    gpio_pad_select_gpio(LED_R_Vneg) ;
-
-	    gpio_set_direction(LED_R_Vneg, GPIO_MODE_OUTPUT);
-	    gpio_set_level(LED_R_Vneg, lev) ;
-
-	    osThreadDef(led, osPriorityNormal, 1, 2000) ;
-	    tid = osThreadCreate(osThread(led), NULL) ;
-	}
+	return ESP_OK == gpio_config(&cfg) ;
 }
 
 void LED_end(void)
 {
-	if (tid)
-		(void) osSignalSet(tid, SIG_QUIT) ;
+	CHECK_IT(ESP_OK == gpio_reset_pin(LED)) ;
+}
+
+void LED_rosso(bool si)
+{
+	gpio_set_level(LED, si ? 1 : 0) ;
 }
