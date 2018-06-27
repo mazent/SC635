@@ -32,8 +32,8 @@ else:
 
 INDIRIZZO_IP = "192.168.4.1"
 
-TAB_CHIUSA = {1: False }
-TAB_APERTA = {1: True }
+TAB_CHIUSA = {1: False, 2: False, 3: False}
+TAB_APERTA = {1: True, 2: True, 3: True}
 
 
 class SC635(gui.New_Toplevel_1):
@@ -47,8 +47,6 @@ class SC635(gui.New_Toplevel_1):
         self._imposta_tab(TAB_CHIUSA)
 
         self.dispo = None
-
-        self.crome = None
 
         # Code per la comunicazione fra grafica e ciccia
         self.codaEXE = coda.Queue()
@@ -256,6 +254,16 @@ class SC635(gui.New_Toplevel_1):
             gui_support.Messaggio.set("Aspetta ...")
             self.codaEXE.put(("scrivi_cs", ns))
 
+    # ========== HW ===========================================================
+
+    def tst_zero(self):
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("tst_zero",))
+
+    def tst_lgg(self):
+        gui_support.tst.set("---")
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("tst_lgg",))
 
 
 

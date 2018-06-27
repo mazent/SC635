@@ -32,7 +32,10 @@ class taskEsecutore(threading.Thread):
             'leggi_cp': self._cod_prod_l,
             'scrivi_cp': self._cod_prod_s,
             'leggi_cs': self._cod_schd_l,
-            'scrivi_cs': self._cod_schd_s
+            'scrivi_cs': self._cod_schd_s,
+
+            'tst_zero': self._tst_azzera,
+            'tst_lgg': self._tst_leggi
         }
 
     def run(self):
@@ -100,3 +103,19 @@ class taskEsecutore(threading.Thread):
             gui_support.Messaggio.set("Cod. scheda: OK")
         else:
             gui_support.Messaggio.set("Cod. scheda: ERRORE")
+
+    # ========== HW ===========================================================
+
+    def _tst_azzera(self, _):
+        if self.dispo.azzera_tasto():
+            gui_support.Messaggio.set("Tasto: OK")
+        else:
+            gui_support.Messaggio.set("Tasto: ERRORE")
+
+    def _tst_leggi(self, _):
+        cnt = self.dispo.leggi_tasto()
+        if cnt is None:
+            gui_support.Messaggio.set("Tasto: ERRORE")
+        else:
+            gui_support.tst.set(cnt)
+            gui_support.Messaggio.set("Tasto: OK")

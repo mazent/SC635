@@ -74,3 +74,16 @@ class DISPOSITIVO(object):
     def scrivi_scheda(self, ns):
         ns = ns.encode('ascii')
         return self.prot.cmdPrmVoid(0x0103, ns)
+
+    # ============================================
+    # HW
+    # ============================================
+
+    def azzera_tasto(self):
+        return self.prot.cmdVoidVoid(0x0200)
+
+    def leggi_tasto(self):
+        cnt = self.prot.cmdVoidRsp(0x0201, 1)
+        if cnt is not None:
+            cnt = cnt[0]
+        return cnt
