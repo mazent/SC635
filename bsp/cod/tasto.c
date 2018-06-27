@@ -7,7 +7,6 @@
 
 #include "driver/gpio.h"
 
-#define SC635		0
 
 #define BUTTON_SEL		GPIO_SEL_39
 #define BUTTON    		GPIO_NUM_39
@@ -17,18 +16,14 @@ static const gpio_config_t cfg = {
 	.mode = GPIO_MODE_INPUT,
 	// Alla fine torna alto
 	.intr_type = GPIO_INTR_POSEDGE,
-#if SC635
+	// GPIO34-39 non hanno pull up/down
 	.pull_up_en = GPIO_PULLUP_DISABLE,
-#else
-	.pull_up_en = GPIO_PULLUP_ENABLE,
-#endif
 	.pull_down_en = GPIO_PULLDOWN_DISABLE
 };
 
 
-static void tst_vuota(bool x)
+static void tst_vuota(void)
 {
-	UNUSED(x) ;
 }
 
 static PF_TST cbTst = tst_vuota ;
