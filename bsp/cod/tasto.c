@@ -1,23 +1,28 @@
 #include "tasto.h"
 
+/*
+ * Il bottone viene mosso da un TPS3421EG,
+ * cre crea un prispolo basso
+ */
+
 #include "driver/gpio.h"
 
-#if 0
-	// SC635
-#	define BUTTON_SEL		GPIO_SEL_39
-#	define BUTTON    		GPIO_NUM_39
-#else
-#	define BUTTON_SEL		GPIO_SEL_0
-#	define BUTTON    		GPIO_NUM_0
-#endif
+#define SC635		0
+
+#define BUTTON_SEL		GPIO_SEL_39
+#define BUTTON    		GPIO_NUM_39
 
 static const gpio_config_t cfg = {
 	.pin_bit_mask = BUTTON_SEL,
 	.mode = GPIO_MODE_INPUT,
-	.intr_type = GPIO_INTR_ANYEDGE
-//		// No pull
-//		.pull_up_en
-//		.pull_down_en
+	// Alla fine torna alto
+	.intr_type = GPIO_INTR_POSEDGE,
+#if SC635
+	.pull_up_en = GPIO_PULLUP_DISABLE,
+#else
+	.pull_up_en = GPIO_PULLUP_ENABLE,
+#endif
+	.pull_down_en = GPIO_PULLDOWN_DISABLE
 };
 
 
@@ -32,8 +37,7 @@ static void IRAM_ATTR button_isr(void * v)
 {
 	UNUSED(v) ;
 
-	// Attivo basso
-	cbTst( 0 == gpio_get_level(BUTTON) ? true : false) ;
+	cbTst() ;
 }
 
 
@@ -60,13 +64,8 @@ bool TST_beg(PF_TST cb)
 
 void TST_end(void)
 {
-	gpio_intr_disable(BUTTON) ;
 	gpio_isr_handler_remove(BUTTON) ;
 
 	cbTst = tst_vuota ;
 }
 
-bool TST_is_pressed(void)
-{
-	return 0 == gpio_get_level(BUTTON) ? true : false ;
-}

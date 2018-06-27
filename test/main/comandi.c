@@ -1,12 +1,17 @@
 #include "spc.h"
 #include "prod.h"
 
+extern int cntTst ;
+
 #define CMD_ECO		((SPC_CMD) 0x0000)
 
 #define CMD_CODP_L	((SPC_CMD) 0x0100)
 #define CMD_CODP_S	((SPC_CMD) 0x0101)
 #define CMD_CODS_L	((SPC_CMD) 0x0102)
 #define CMD_CODS_S	((SPC_CMD) 0x0103)
+
+#define CMD_TST_Z 	((SPC_CMD) 0x0200)
+#define CMD_TST_L 	((SPC_CMD) 0x0201)
 
 // Sala di lettura
 static union {
@@ -73,6 +78,21 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 			else
 				SPC_err(tx, cmd) ;
 		}
+		break ;
+
+	case CMD_TST_Z:
+		if (0 == dim) {
+			cntTst = 0 ;
+			SPC_resp(tx, cmd, NULL, 0) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_TST_L:
+		if (0 == dim)
+			SPC_resp(tx, cmd, &cntTst, 1) ;
+		else
+			SPC_err(tx, cmd) ;
 		break ;
 
 	default:

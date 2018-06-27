@@ -21,8 +21,18 @@ osPoolDef(pbcid, NUM_BUFFER, UN_BUFFER) ;
 static osPoolId pbcid = NULL ;
 
 // coda dei messaggi
-osMessageQDef(comes, NUM_BUFFER, UN_BUFFER *) ;
+osMessageQDef(comes, 2 * NUM_BUFFER, UN_BUFFER *) ;
 static osMessageQId comes = NULL ;
+	// speciali
+#define MSG_TASTO		0x90B56557
+
+int cntTst = 0 ;
+
+static void tasto(void)
+{
+	CHECK_IT(osOK == osMessagePut(comes, MSG_TASTO, 0)) ;
+}
+
 
 static void gst_conn(const char * ip, uint16_t porta)
 {
@@ -188,6 +198,9 @@ void app_main()
 
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
+    // Scheda
+    CHECK_IT( TST_beg(tasto) ) ;
+
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;
     CHECK_IT( SPC_ini_tx(&txSock) ) ;
@@ -204,25 +217,35 @@ void app_main()
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
 
+
 	// Eseguo i comandi
 	while (true) {
 		osEvent event = osMessageGet(comes, osWaitForever) ;
 		assert(osEventMessage == event.status) ;
 
 		if (osEventMessage == event.status) {
-			UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
-			RX_SPC * prx = &rxUart ;
-			TX_SPC * ptx = &txUart ;
+			switch (event.value.v) {
+			case MSG_TASTO:
+				++cntTst ;
+				break ;
+			default: {
+					// Comando
+					UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
+					RX_SPC * prx = &rxUart ;
+					TX_SPC * ptx = &txUart ;
 
-			if (SOCKET == msg->orig) {
-				prx = &rxSock ;
-				ptx = &txSock ;
+					if (SOCKET == msg->orig) {
+						prx = &rxSock ;
+						ptx = &txSock ;
+					}
+
+					if ( SPC_esamina(prx, msg) )
+						esegui(prx, ptx) ;
+
+					CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
+				}
+				break ;
 			}
-
-			if ( SPC_esamina(prx, msg) )
-				esegui(prx, ptx) ;
-
-			CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
 		}
 	}
 }
