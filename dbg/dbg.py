@@ -265,6 +265,10 @@ class SC635(gui.New_Toplevel_1):
         gui_support.Messaggio.set("Aspetta ...")
         self.codaEXE.put(("tst_lgg",))
 
+    def cavo(self):
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("cavo",))
+
 
 
 if __name__ == '__main__':
@@ -275,6 +279,7 @@ if __name__ == '__main__':
     gui_support.set_Tk_var()
 
     gui_support.Messaggio.set("Pronto!")
+    gui_support.cavo.set(0)
 
     FINESTRA = SC635(ROOT)
     gui_support.init(ROOT, FINESTRA)

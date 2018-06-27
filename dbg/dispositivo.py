@@ -87,3 +87,9 @@ class DISPOSITIVO(object):
         if cnt is not None:
             cnt = cnt[0]
         return cnt
+
+    def cavo_in_rj45(self):
+        cavo = self.prot.cmdVoidRsp(0x0202, 1)
+        if cavo is not None:
+            cavo = cavo[0] != 0
+        return cavo

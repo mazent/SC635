@@ -35,7 +35,8 @@ class taskEsecutore(threading.Thread):
             'scrivi_cs': self._cod_schd_s,
 
             'tst_zero': self._tst_azzera,
-            'tst_lgg': self._tst_leggi
+            'tst_lgg': self._tst_leggi,
+            'cavo': self._cavo_presente
         }
 
     def run(self):
@@ -119,3 +120,12 @@ class taskEsecutore(threading.Thread):
         else:
             gui_support.tst.set(cnt)
             gui_support.Messaggio.set("Tasto: OK")
+
+    def _cavo_presente(self, _):
+        cavo = self.dispo.cavo_in_rj45()
+        if cavo is None:
+            gui_support.Messaggio.set("Cavo: ERRORE")
+        else:
+            #gui_support.cavo.set('1' if cavo else '0')
+            gui_support.cavo.set(cavo)
+            gui_support.Messaggio.set("Cavo: OK")
