@@ -2,8 +2,8 @@
 
 #include "driver/gpio.h"
 
-#define LED_SEL		GPIO_SEL_33
-#define LED    		GPIO_NUM_33
+#define LED_SEL		GPIO_SEL_4
+#define LED    		GPIO_NUM_4
 
 static const gpio_config_t cfg = {
 	.pin_bit_mask = LED_SEL,
