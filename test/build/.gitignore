@@ -2,7 +2,6 @@ bsp
 app_trace
 app_update
 aws_iot
-bootloader
 bootloader_support
 bt
 coap

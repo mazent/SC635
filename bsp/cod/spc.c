@@ -39,7 +39,7 @@ static void componi(TX_SPC * ptx, SPC_CMD cmd, const void * v, int d)
 {
     union {
         SPC_CMD cmd ;
-        uint8_t b[1] ;
+        uint8_t b[sizeof(SPC_CMD)] ;
         uint16_t crc ;
     } u ;
 	uint8_t * btx = ptx->tx ;
