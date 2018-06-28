@@ -11,6 +11,7 @@ bool AP_beg(const S_AP * ap)
     wifi_config_t wifi_config = {
         .ap = {
             .max_connection = ap->max_connection,
+			.channel = 9
         }
     };
 
@@ -39,8 +40,13 @@ bool AP_beg(const S_AP * ap)
     	if (ESP_OK != esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config))
     		break ;
 
+    	//esp_wifi_set_ps(WIFI_PS_NONE) ;
+    	//esp_wifi_set_protocol(ESP_IF_WIFI_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G) ;
+    	//esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20) ;
+
     	if (ESP_OK != esp_wifi_start())
     		break ;
+
 
     	esito = true ;
     } while (false) ;

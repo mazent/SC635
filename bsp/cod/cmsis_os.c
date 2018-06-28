@@ -98,12 +98,13 @@ osThreadId osThreadCreate(const osThreadDef_t * td, void * argument)
 {
 	TaskHandle_t handle ;
 
-	if (xTaskCreate(td->pthread,
+	if (xTaskCreatePinnedToCore(td->pthread,
 					td->nome,
 	                (td->stacksize + sizeof(portSTACK_TYPE) - 1) / sizeof(portSTACK_TYPE),
 	                argument,
 	                freeRtos_pri(td->tpriority),
-	                &handle) != pdPASS) {
+	                &handle,
+					portNUM_PROCESSORS - 1) != pdPASS) {
 	    return NULL ;
 	}
 
