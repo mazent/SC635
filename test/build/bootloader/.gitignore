@@ -1,0 +1,7 @@
+bootloader_support
+esptool_py
+log
+main
+micro-ecc
+soc
+spi_flash
