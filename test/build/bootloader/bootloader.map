@@ -287,7 +287,7 @@ Discarded input sections
  .data          0x0000000000000000        0x0 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .bss           0x0000000000000000        0x0 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .text.rtc_clk_cal
-                0x0000000000000000       0x52 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+                0x0000000000000000       0x54 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .text.rtc_time_us_to_slowclk
                 0x0000000000000000       0x1f /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .text.rtc_time_slowclk_to_us
@@ -295,7 +295,7 @@ Discarded input sections
  .text.rtc_time_get
                 0x0000000000000000       0x50 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .xt.lit        0x0000000000000000       0x30 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
- .xt.prop       0x0000000000000000      0x24c /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ .xt.prop       0x0000000000000000      0x204 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .data          0x0000000000000000        0x0 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
  .bss           0x0000000000000000        0x0 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
  .xt.lit        0x0000000000000000        0x8 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
@@ -469,7 +469,7 @@ END GROUP
                 0x000000003fff142c                . = ALIGN (0x4)
                 0x000000003fff142c                _heap_start = ABSOLUTE (.)
 
-.iram.text      0x0000000040078000     0x345a
+.iram.text      0x0000000040078000     0x3412
                 0x0000000040078000                _stext = .
                 0x0000000040078000                _text_start = ABSOLUTE (.)
  *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
@@ -632,13 +632,13 @@ END GROUP
                                          0x94 (size before relaxing)
  .literal.rtc_clk_cal_internal
                 0x0000000040078534       0x20 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
-                                         0x3c (size before relaxing)
+                                         0x38 (size before relaxing)
  .literal.rtc_clk_cal_ratio
                 0x0000000040078554        0x0 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
                                           0x8 (size before relaxing)
  .literal.rtc_clk_wait_for_slow_cycle
                 0x0000000040078554        0x8 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
-                                         0x20 (size before relaxing)
+                                         0x1c (size before relaxing)
  .literal       0x000000004007855c        0x4 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
                                           0x8 (size before relaxing)
  .iram1.literal
@@ -865,80 +865,80 @@ END GROUP
                 0x000000004007aca0                rtc_clk_init
  *fill*         0x000000004007ae2e        0x2 
  .text.rtc_clk_cal_internal
-                0x000000004007ae30      0x180 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+                0x000000004007ae30      0x14a /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ *fill*         0x000000004007af7a        0x2 
  .text.rtc_clk_cal_ratio
-                0x000000004007afb0       0x20 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+                0x000000004007af7c       0x20 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
                                          0x24 (size before relaxing)
-                0x000000004007afb0                rtc_clk_cal_ratio
+                0x000000004007af7c                rtc_clk_cal_ratio
  .text.rtc_clk_wait_for_slow_cycle
-                0x000000004007afd0       0x79 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
-                0x000000004007afd0                rtc_clk_wait_for_slow_cycle
- *fill*         0x000000004007b049        0x3 
- .text          0x000000004007b04c       0x26 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
-                0x000000004007b04c                __bswapsi2
- *fill*         0x000000004007b072        0x0 
- *fill*         0x000000004007b072        0x2 
+                0x000000004007af9c       0x68 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+                0x000000004007af9c                rtc_clk_wait_for_slow_cycle
+ .text          0x000000004007b004       0x26 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
+                0x000000004007b004                __bswapsi2
+ *fill*         0x000000004007b02a        0x0 
+ *fill*         0x000000004007b02a        0x2 
  .text.index_to_partition
-                0x000000004007b074       0x45 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_utility.o)
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x0 
- *fill*         0x000000004007b0b9        0x3 
+                0x000000004007b02c       0x45 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_utility.o)
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x0 
+ *fill*         0x000000004007b071        0x3 
  .text.clk_val_is_valid
-                0x000000004007b0bc       0x21 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x0 
- *fill*         0x000000004007b0dd        0x3 
- .text          0x000000004007b0e0      0x281 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
-                0x000000004007b0e0                __udivdi3
+                0x000000004007b074       0x21 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x0 
+ *fill*         0x000000004007b095        0x3 
+ .text          0x000000004007b098      0x281 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
+                0x000000004007b098                __udivdi3
  *(.iram1 .iram1.*)
- *fill*         0x000000004007b361        0x3 
- .iram1         0x000000004007b364       0xf6 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(cpu_util.o)
-                0x000000004007b364                esp_cpu_stall
-                0x000000004007b3e8                esp_cpu_unstall
-                0x000000004007b42c                esp_cpu_reset
-                0x000000004007b44c                esp_cpu_in_ocd_debug_mode
- *fill*         0x000000004007b45a        0x0 
+ *fill*         0x000000004007b319        0x3 
+ .iram1         0x000000004007b31c       0xf6 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(cpu_util.o)
+                0x000000004007b31c                esp_cpu_stall
+                0x000000004007b3a0                esp_cpu_unstall
+                0x000000004007b3e4                esp_cpu_reset
+                0x000000004007b404                esp_cpu_in_ocd_debug_mode
+ *fill*         0x000000004007b412        0x0 
  *(.fini.literal)
  *(.fini)
  *(.gnu.version)
-                0x000000004007b45a                _text_end = ABSOLUTE (.)
-                0x000000004007b45a                _etext = .
+                0x000000004007b412                _text_end = ABSOLUTE (.)
+                0x000000004007b412                _etext = .
                 [!provide]                        PROVIDE (abort, 0x4000bba4)
                 [!provide]                        PROVIDE (__absvdi2, 0x4006387c)
                 [!provide]                        PROVIDE (__absvsi2, 0x40063868)
@@ -2792,7 +2792,7 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
  .debug_frame   0x0000000000000a88       0x28 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
  .debug_frame   0x0000000000000ab0       0x28 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
 
-.debug_info     0x0000000000000000     0xbcaf
+.debug_info     0x0000000000000000     0xbc86
  .debug_info    0x0000000000000000      0x523 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/main/libmain.a(bootloader_start.o)
  .debug_info    0x0000000000000523     0x1465 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_init.o)
  .debug_info    0x0000000000001988     0x1374 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_utility.o)
@@ -2809,11 +2809,11 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
  .debug_info    0x00000000000099c6      0x11a /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(cpu_util.o)
  .debug_info    0x0000000000009ae0      0x339 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_init.o)
  .debug_info    0x0000000000009e19     0x1457 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
- .debug_info    0x000000000000b270      0x3aa /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
- .debug_info    0x000000000000b61a       0xcd /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
- .debug_info    0x000000000000b6e7      0x5c8 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
+ .debug_info    0x000000000000b270      0x381 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ .debug_info    0x000000000000b5f1       0xcd /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
+ .debug_info    0x000000000000b6be      0x5c8 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
 
-.debug_abbrev   0x0000000000000000     0x2709
+.debug_abbrev   0x0000000000000000     0x26fa
  .debug_abbrev  0x0000000000000000      0x1c1 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/main/libmain.a(bootloader_start.o)
  .debug_abbrev  0x00000000000001c1      0x3a8 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_init.o)
  .debug_abbrev  0x0000000000000569      0x397 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_utility.o)
@@ -2830,11 +2830,11 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
  .debug_abbrev  0x0000000000001dcf       0xa5 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(cpu_util.o)
  .debug_abbrev  0x0000000000001e74      0x146 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_init.o)
  .debug_abbrev  0x0000000000001fba      0x416 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
- .debug_abbrev  0x00000000000023d0      0x17a /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
- .debug_abbrev  0x000000000000254a       0x60 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
- .debug_abbrev  0x00000000000025aa      0x15f /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
+ .debug_abbrev  0x00000000000023d0      0x16b /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ .debug_abbrev  0x000000000000253b       0x60 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
+ .debug_abbrev  0x000000000000259b      0x15f /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
 
-.debug_loc      0x0000000000000000     0x485c
+.debug_loc      0x0000000000000000     0x48df
  .debug_loc     0x0000000000000000       0x7c /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/main/libmain.a(bootloader_start.o)
  .debug_loc     0x000000000000007c      0x5c7 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_init.o)
  .debug_loc     0x0000000000000643      0x789 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_utility.o)
@@ -2851,9 +2851,9 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
  .debug_loc     0x000000000000307b       0x34 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(cpu_util.o)
  .debug_loc     0x00000000000030af      0x419 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_init.o)
  .debug_loc     0x00000000000034c8      0x7ae /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
- .debug_loc     0x0000000000003c76      0x1dd /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
- .debug_loc     0x0000000000003e53       0x21 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
- .debug_loc     0x0000000000003e74      0x9e8 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
+ .debug_loc     0x0000000000003c76      0x260 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ .debug_loc     0x0000000000003ed6       0x21 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
+ .debug_loc     0x0000000000003ef7      0x9e8 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
 
 .debug_aranges  0x0000000000000000      0x500
  .debug_aranges
@@ -2915,7 +2915,7 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
  .debug_ranges  0x0000000000000898       0x40 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
  .debug_ranges  0x00000000000008d8       0x60 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
 
-.debug_line     0x0000000000000000     0x6a11
+.debug_line     0x0000000000000000     0x6a1d
  .debug_line    0x0000000000000000      0x404 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/main/libmain.a(bootloader_start.o)
  .debug_line    0x0000000000000404      0x8e4 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_init.o)
  .debug_line    0x0000000000000ce8      0x9b3 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_utility.o)
@@ -2932,11 +2932,11 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
  .debug_line    0x0000000000005094      0x1e8 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(cpu_util.o)
  .debug_line    0x000000000000527c      0x47c /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_init.o)
  .debug_line    0x00000000000056f8      0xcd8 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
- .debug_line    0x00000000000063d0      0x42a /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
- .debug_line    0x00000000000067fa       0x89 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
- .debug_line    0x0000000000006883      0x18e /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
+ .debug_line    0x00000000000063d0      0x436 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ .debug_line    0x0000000000006806       0x89 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
+ .debug_line    0x000000000000688f      0x18e /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
 
-.debug_str      0x0000000000000000     0x44b7
+.debug_str      0x0000000000000000     0x4448
  .debug_str     0x0000000000000000      0x4a8 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/main/libmain.a(bootloader_start.o)
                                         0x539 (size before relaxing)
  .debug_str     0x00000000000004a8      0x85d /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/bootloader_support/libbootloader_support.a(bootloader_init.o)
@@ -2969,11 +2969,11 @@ OUTPUT(/home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloade
                                         0x260 (size before relaxing)
  .debug_str     0x0000000000003b6d      0x56d /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_clk.o)
                                         0x987 (size before relaxing)
- .debug_str     0x00000000000040da      0x1c9 /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
+ .debug_str     0x00000000000040da      0x15a /home/italia.texa.org/cpadovan/Desktop/doip/ws/SC635/test/build/bootloader/soc/libsoc.a(rtc_time.o)
                                         0x39c (size before relaxing)
- .debug_str     0x00000000000042a3      0x138 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
+ .debug_str     0x0000000000004234      0x138 /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_bswapsi2.o)
                                         0x1de (size before relaxing)
- .debug_str     0x00000000000043db       0xdc /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
+ .debug_str     0x000000000000436c       0xdc /home/italia.texa.org/cpadovan/Desktop/doip/esp/xtensa-esp32-elf/bin/../lib/gcc/xtensa-esp32-elf/5.2.0/libgcc.a(_udivdi3.o)
                                         0x258 (size before relaxing)
 
 .comment        0x0000000000000000       0x3a
