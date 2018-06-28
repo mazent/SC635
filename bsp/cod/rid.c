@@ -43,7 +43,7 @@ static void vuota(void)
 {
 }
 
-static PF_CRJ cbRID = vuota ;
+static PF_RID cbRID = vuota ;
 
 static enum {
 	SCOLL,
