@@ -3,6 +3,7 @@
 #include "cavo.h"
 #include "mobd.h"
 #include "led.h"
+#include "rid.h"
 
 extern int cntTst ;
 
@@ -19,6 +20,9 @@ extern int cntTst ;
 #define CMD_MOBD  	((SPC_CMD) 0x0203)
 #define CMD_ETH   	((SPC_CMD) 0x0204)
 #define CMD_LED   	((SPC_CMD) 0x0205)
+#define CMD_RID_I 	((SPC_CMD) 0x0206)
+#define CMD_RID_T 	((SPC_CMD) 0x0207)
+#define CMD_RID_E 	((SPC_CMD) 0x0208)
 
 // Sala di lettura
 static union {
@@ -136,6 +140,37 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 		else
 			SPC_err(tx, cmd) ;
 		break ;
+
+	case CMD_RID_I:
+		if (0 == dim) {
+			if ( RID_start() )
+				SPC_resp(tx, cmd, NULL, 0) ;
+			else
+				SPC_err(tx, cmd) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_RID_T:
+		if (0 == dim) {
+			RID_stop() ;
+			SPC_resp(tx, cmd, NULL, 0) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_RID_E:
+		if (0 == dim) {
+			bool doip ;
+			if ( RID_doip(&doip) )
+				SPC_resp(tx, cmd, &doip, 1) ;
+			else
+				SPC_err(tx, cmd) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+
 
 	default:
 		SPC_unk(tx, cmd) ;

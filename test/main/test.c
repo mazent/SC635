@@ -7,6 +7,7 @@
 #include "cavo.h"
 #include "mobd.h"
 #include "led.h"
+#include "rid.h"
 
 #include "driver/gpio.h"
 
@@ -28,6 +29,7 @@ static osMessageQId comes = NULL ;
 	// speciali
 #define MSG_TASTO		0x90B56557
 #define MSG_CAVO		0xCA8AB86D
+#define MSG_RIDE		0xA74C0DE7
 
 int cntTst = 0 ;
 
@@ -39,6 +41,11 @@ static void tasto(void)
 static void cavo(void)
 {
 	CHECK_IT(osOK == osMessagePut(comes, MSG_CAVO, 0)) ;
+}
+
+static void rid(void)
+{
+	CHECK_IT(osOK == osMessagePut(comes, MSG_RIDE, 0)) ;
 }
 
 static void gst_conn(const char * ip, uint16_t porta)
@@ -210,6 +217,7 @@ void app_main()
     CHECK_IT( CRJ_beg(cavo) ) ;
     CHECK_IT( MOBD_beg() ) ;
     CHECK_IT( LED_beg() ) ;
+    CHECK_IT( RID_beg(rid) ) ;
 
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;
@@ -239,6 +247,8 @@ void app_main()
 				++cntTst ;
 				break ;
 			case MSG_CAVO:
+				break ;
+			case MSG_RIDE:
 				break ;
 			default: {
 					// Comando
