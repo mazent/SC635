@@ -284,6 +284,18 @@ class SC635(gui.New_Toplevel_1):
         gui_support.Messaggio.set("Aspetta ...")
         self.codaEXE.put(("led", rosso))
 
+    def rid_ini(self):
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("rid_ini", ))
+
+    def rid_fin(self):
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("rid_fin", ))
+
+    def rid_esi(self):
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("rid_esi", ))
+
 
 
 if __name__ == '__main__':

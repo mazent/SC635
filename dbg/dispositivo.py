@@ -111,3 +111,15 @@ class DISPOSITIVO(object):
         if rosso:
             prm[0] = 1
         return self.prot.cmdPrmVoid(0x0205, prm)
+
+    def ril_doip_ini(self):
+        return self.prot.cmdVoidVoid(0x0206)
+
+    def ril_doip_fin(self):
+        return self.prot.cmdVoidVoid(0x0207)
+
+    def ril_doip_ris(self):
+        doip = self.prot.cmdVoidRsp(0x0208, 1)
+        if doip is not None:
+            doip = doip[0] != 0
+        return doip

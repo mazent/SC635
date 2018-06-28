@@ -39,7 +39,10 @@ class taskEsecutore(threading.Thread):
             'cavo': self._cavo_presente,
             'mobd': self._mobd,
             'eth': self._ethernet,
-            'led': self._led
+            'led': self._led,
+            'rid_ini': self._rileva_doip_inizio,
+            'rid_fin': self._rileva_doip_fine,
+            'rid_esi': self._rileva_doip_esito
         }
 
     def run(self):
@@ -149,3 +152,23 @@ class taskEsecutore(threading.Thread):
             gui_support.Messaggio.set("Led: OK")
         else:
             gui_support.Messaggio.set("Led: ERRORE")
+
+    def _rileva_doip_inizio(self, _):
+        if self.dispo.ril_doip_ini():
+            gui_support.Messaggio.set("Rileva DoIP: OK")
+        else:
+            gui_support.Messaggio.set("Rileva DoIP: ERRORE")
+
+    def _rileva_doip_fine(self, _):
+        if self.dispo.ril_doip_fin():
+            gui_support.Messaggio.set("Rileva DoIP: OK")
+        else:
+            gui_support.Messaggio.set("Rileva DoIP: ERRORE")
+
+    def _rileva_doip_esito(self, _):
+        doip = self.dispo.ril_doip_ris()
+        if doip is None:
+            gui_support.Messaggio.set("Rileva DoIP: ERRORE")
+        else:
+            gui_support.doip.set(doip)
+            gui_support.Messaggio.set("Rileva DoIP: OK")
