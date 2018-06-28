@@ -72,18 +72,17 @@ class PROT(object):
         if 'timeout' in cosa:
             timeout = cosa['timeout']
 
-        self.mdp = 1024
-        if 'mdp' in cosa:
-            self.mdp = cosa['mdp']
-
-
         if 'indip' in cosa:
             # socket tcp
+            self.mdp = 1400
+
             self.uart = _SOCK(cosa['indip'], 50741, timeout)
             if not self.uart.a_posto():
                 self.uart.close()
                 self.uart = None
         else:
+            self.mdp = 1024
+
             # porta seriale
             brate = 115200
             if 'brate' in cosa:
@@ -162,7 +161,7 @@ class PROT(object):
 
     def dim_max(self, cmd, dati):
         if cmd is None:
-            return self.mdp
+            return self.mdp - 2
         else:
             pkt = bytearray()
 

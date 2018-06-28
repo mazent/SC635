@@ -12,6 +12,8 @@ import os
 import psutil
 import webbrowser
 import random
+import string
+
 
 import crcmod
 
@@ -410,3 +412,29 @@ def cod_scheda(pre):
 
 def cod_prod():
     return cod_finto(12)
+
+# Genera due bytearray con dimdati lettere/cifre casuali
+def genera_dati(dimdati):
+    dati = [None, None]
+
+    stampabili = string.ascii_letters + string.digits
+    base = bytearray(stampabili.encode('ascii'))
+    # arrotondo dimdati al numero di caratteri base
+    dim = (dimdati + len(base) - 1) // len(base)
+
+    # creo un vettore con tante base quante me ne servono
+    dato = bytearray(base)
+    dim -= 1
+    while dim:
+        dato += base
+        dim -= 1
+
+    # mescolo ...
+    random.shuffle(dato)
+    # ... ed estraggo quelli che servono
+    dati[0] = dato[:dimdati]
+
+    random.shuffle(dato)
+    dati[1] = dato[:dimdati]
+
+    return dati

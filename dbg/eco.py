@@ -51,12 +51,13 @@ class ECO(object):
 
         self.dimdati = 0
 
-    def _genera_dati(self, dispo):
+    def _genera_dati_bin(self, dispo):
         if self.dimdati <= 0:
             self.dimdati = dispo.dim_max(None, None)
 
         dati = [None, None]
         dim = (self.dimdati + 256 - 1) // 256
+
         dato = bytearray(range(256))
         dim -= 1
         while dim:
@@ -70,6 +71,12 @@ class ECO(object):
         dati[1] = dato[:dimp]
 
         return dati
+
+    def _genera_dati(self, dispo):
+        if self.dimdati <= 0:
+            self.dimdati = dispo.dim_max(None, None)
+
+        return utili.genera_dati(self.dimdati)
 
     def aggiornaEco(self):
         if self.continuaEco:
