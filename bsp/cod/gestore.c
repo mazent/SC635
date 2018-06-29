@@ -159,13 +159,10 @@ static void gstSRV(void * v)
 								&size);
 						if (cln >= 0) {
 							const char * ip = inet_ntoa (clientname.sin_addr) ;
-							uint16_t porta = ntohs (clientname.sin_port) ;
-
-							ESP_LOGI(TAG, "connesso %s:%04X", ip, porta) ;
 
 							FD_SET(cln, &active_fd_set);
 
-							cfg.conn(ip, porta) ;
+							cfg.conn(ip) ;
 						}
 					}
 					else {
@@ -185,8 +182,6 @@ static void gstSRV(void * v)
 							if (nbytes <= 0) {
 								close (i);
 								FD_CLR (i, &active_fd_set);
-
-								ESP_LOGI(TAG, "sconnesso") ;
 
 								cfg.scon() ;
 							}

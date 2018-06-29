@@ -48,10 +48,11 @@ static void rid(void)
 	CHECK_IT(osOK == osMessagePut(comes, MSG_RIDE, 0)) ;
 }
 
-static void gst_conn(const char * ip, uint16_t porta)
+static void gst_conn(const char * ip)
 {
 	UNUSED(ip) ;
-	UNUSED(porta) ;
+
+	ESP_LOGI(TAG, "connesso %s", ip) ;
 }
 
 static void gst_msg(UN_BUFFER * msg)
@@ -61,6 +62,7 @@ static void gst_msg(UN_BUFFER * msg)
 
 static void gst_scon(void)
 {
+	ESP_LOGI(TAG, "sconnesso") ;
 }
 
 static S_GST_CFG gstcb = {

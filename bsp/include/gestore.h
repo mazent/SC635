@@ -6,7 +6,7 @@
 
 typedef struct {
 	osPoolId mp ;
-	void (*conn)(const char * ip, uint16_t porta) ;
+	void (*conn)(const char * ip) ;
 	void (*msg)(UN_BUFFER *) ;
 	void (*scon)(void) ;
 } S_GST_CFG ;
