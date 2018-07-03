@@ -11,6 +11,7 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 
+extern bool UIF_beg(void) ;
 
 //#define CMD_ECO		((SPC_CMD) 0x0000)
 //
@@ -158,7 +159,6 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 	return ESP_OK;
 }
 
-
 void app_main()
 {
     esp_log_level_set("*", ESP_LOG_INFO) ;
@@ -185,6 +185,8 @@ void app_main()
 		.auth = AUTH_OPEN
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
+
+	CHECK_IT( UIF_beg() ) ;
 
 #elif 0
 	CHECK_IT( TST_beg(tasto) ) ;
