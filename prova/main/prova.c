@@ -3,7 +3,6 @@
 #include "spc.h"
 #include "tasto.h"
 #include "ap.h"
-#include "gestore.h"
 
 #include "driver/gpio.h"
 
@@ -41,27 +40,6 @@ extern bool UIF_beg(void) ;
 static const char *TAG = "mz";
 
 
-static void gst_conn(const char * ip, uint16_t porta)
-{
-	UNUSED(ip) ;
-	UNUSED(porta) ;
-}
-
-static void gst_msg(void * v, int d)
-{
-	// eco
-	(void) GST_tx(v, d) ;
-}
-
-static void gst_scon(void)
-{
-}
-
-static S_GST_CB gstcb = {
-	.conn = gst_conn, 
-	.msg = gst_msg,
-	.scon = gst_scon
-} ;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -110,12 +88,10 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     case SYSTEM_EVENT_AP_START:                 /**< ESP32 soft-AP start */
     	ESP_LOGI(TAG, "SYSTEM_EVENT_AP_START");
     	AP_evn(AP_EVN_START, &event->event_info) ;
-    	CHECK_IT( GST_beg(&gstcb) ) ;
     	break ;
     case SYSTEM_EVENT_AP_STOP:                  /**< ESP32 soft-AP stop */
     	ESP_LOGI(TAG, "SYSTEM_EVENT_AP_STOP");
     	AP_evn(AP_EVN_STOP, &event->event_info) ;
-    	GST_end() ;
     	break ;
     case SYSTEM_EVENT_AP_STACONNECTED:          /**< a station connected to ESP32 soft-AP */
     	ESP_LOGI(TAG, "SYSTEM_EVENT_AP_STACONNECTED");

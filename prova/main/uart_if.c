@@ -1,24 +1,31 @@
 #include "bsp.h"
 #include "driver/uart.h"
 
-//#include "lwip/opt.h"
-//#include "lwip/def.h"
-//#include "lwip/mem.h"
-//#include "lwip/pbuf.h"
-//#include "lwip/stats.h"
-//#include "lwip/snmp.h"
-//#include "lwip/ethip6.h"
-//#include "netif/etharp.h"
-//#include "netif/ppp/pppoe.h"
+#include "lwip/opt.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/stats.h"
+#include "lwip/snmp.h"
+#include "lwip/ethip6.h"
+#include "lwip/tcpip.h"
+#include "netif/etharp.h"
+#include "netif/ppp/pppoe.h"
+
+#define IPADDR4_INIT_BYTES(a,b,c,d) \
+        ((u32_t)((d) & 0xff) << 24) | \
+        ((u32_t)((c) & 0xff) << 16) | \
+        ((u32_t)((b) & 0xff) << 8)  | \
+         (u32_t)((a) & 0xff)
 
 static const ip4_addr_t ipaddr = {
 	IPADDR4_INIT_BYTES(169, 254, 1, 1)
 } ;
 static const ip4_addr_t netmask = {
-	IPADDR4_INIT_BYTES(255, 255, 0, 0)
+	IP_CLASSB_NET
 } ;
 static const ip4_addr_t gway = {
-	IPADDR4_INIT_BYTES(0, 0, 0, 0)
+	IPADDR_NONE
 } ;
 
 //  Called when a raw link packet is ready to be transmitted. This function should not add any more headers
@@ -67,7 +74,7 @@ static err_t uart_init_fn(struct netif *netif)
 	netif->name[1] = 'x' ;
 	netif->num = 0 ;
 
-	netif->flags |= NETIF_FLAG_POINTTOPOINT | NETIF_FLAG_LINK_UP ;
+	//netif->flags |= NETIF_FLAG_POINTTOPOINT | NETIF_FLAG_LINK_UP ;
 
 	netif->output = etharp_output;
 	netif->linkoutput = uart_linkoutput_fn ;
@@ -88,6 +95,7 @@ bool UIF_beg(void)
 #else
 		netifapi_dhcp_start(&u_netif) ;
 #endif
+		return true ;
 	}
 	else
 		return false ;
