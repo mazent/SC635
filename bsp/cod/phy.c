@@ -2,8 +2,8 @@
 
 #include "driver/gpio.h"
 
-#define PHY_SEL		GPIO_SEL_4
-#define PHY    		GPIO_NUM_4
+#define PHY_SEL		GPIO_SEL_2
+#define PHY    		GPIO_NUM_2
 
 static const gpio_config_t cfg = {
 	.pin_bit_mask = PHY_SEL,
