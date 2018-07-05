@@ -296,6 +296,16 @@ class SC635(gui.New_Toplevel_1):
         gui_support.Messaggio.set("Aspetta ...")
         self.codaEXE.put(("rid_esi", ))
 
+    def phy_reset(self):
+        esito, ms = utili.validaCampo(gui_support.phy_ms.get(), 1, 2550)
+        if esito:
+            ms = (ms + 9) // 10
+            ms *= 10
+            gui_support.phy_ms.get(ms)
+            gui_support.Messaggio.set("Aspetta ...")
+            self.codaEXE.put(("phy_reset", ms))
+        else:
+            gui_support.Messaggio.set("? 10, 20, ... 2550 ?")
 
 
 if __name__ == '__main__':

@@ -123,3 +123,7 @@ class DISPOSITIVO(object):
         if doip is not None:
             doip = doip[0] != 0
         return doip
+
+    def phy_reset(self, ms):
+        prm = bytearray([ms])
+        return self.prot.cmdPrmVoid(0x0209, prm)

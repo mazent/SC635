@@ -42,7 +42,8 @@ class taskEsecutore(threading.Thread):
             'led': self._led,
             'rid_ini': self._rileva_doip_inizio,
             'rid_fin': self._rileva_doip_fine,
-            'rid_esi': self._rileva_doip_esito
+            'rid_esi': self._rileva_doip_esito,
+            'phy_reset': self._resetta_phy
         }
 
     def run(self):
@@ -172,3 +173,9 @@ class taskEsecutore(threading.Thread):
         else:
             gui_support.doip.set(doip)
             gui_support.Messaggio.set("Rileva DoIP: OK")
+
+    def _resetta_phy(self, prm):
+        if self.dispo.phy_reset(prm[1]):
+            gui_support.Messaggio.set("Reset PHY: OK")
+        else:
+            gui_support.Messaggio.set("Reset PHY: ERRORE")
