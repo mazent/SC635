@@ -8,6 +8,7 @@
 #include "mobd.h"
 #include "led.h"
 #include "rid.h"
+#include "phy.h"
 
 #include "driver/gpio.h"
 
@@ -220,6 +221,7 @@ void app_main()
     CHECK_IT( MOBD_beg() ) ;
     CHECK_IT( LED_beg() ) ;
     CHECK_IT( RID_beg(rid) ) ;
+    CHECK_IT( PHY_beg() ) ;
 
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;

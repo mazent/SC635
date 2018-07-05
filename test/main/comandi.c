@@ -4,6 +4,7 @@
 #include "mobd.h"
 #include "led.h"
 #include "rid.h"
+#include "phy.h"
 
 extern int cntTst ;
 
@@ -23,6 +24,7 @@ extern int cntTst ;
 #define CMD_RID_I 	((SPC_CMD) 0x0206)
 #define CMD_RID_T 	((SPC_CMD) 0x0207)
 #define CMD_RID_E 	((SPC_CMD) 0x0208)
+#define CMD_PHYRST	((SPC_CMD) 0x0209)
 
 // Sala di lettura
 static union {
@@ -171,6 +173,15 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 			SPC_err(tx, cmd) ;
 		break ;
 
+	case CMD_PHYRST:
+		if (1 == dim) {
+			SPC_resp(tx, cmd, NULL, 0) ;
+
+			PHY_reset(dati[0]) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
 
 	default:
 		SPC_unk(tx, cmd) ;
