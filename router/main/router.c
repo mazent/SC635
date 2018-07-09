@@ -16,7 +16,7 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 
-extern void esegui(RX_SPC *, TX_SPC *) ;
+//extern void esegui(RX_SPC *, TX_SPC *) ;
 
 static const char *TAG = "test";
 
@@ -216,12 +216,12 @@ void app_main()
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
     // Scheda
-    CHECK_IT( TST_beg(tasto) ) ;
-    CHECK_IT( CRJ_beg(cavo) ) ;
-    CHECK_IT( MOBD_beg() ) ;
-    CHECK_IT( LED_beg() ) ;
-    CHECK_IT( RID_beg(rid) ) ;
-    CHECK_IT( PHY_beg() ) ;
+//    CHECK_IT( TST_beg(tasto) ) ;
+//    CHECK_IT( CRJ_beg(cavo) ) ;
+//    CHECK_IT( MOBD_beg() ) ;
+//    CHECK_IT( LED_beg() ) ;
+//    CHECK_IT( RID_beg(rid) ) ;
+//    CHECK_IT( PHY_beg() ) ;
 
     // Comunicazione
     CHECK_IT( SPC_ini_rx(&rxSock) ) ;
@@ -230,7 +230,7 @@ void app_main()
     CHECK_IT( SPC_ini_rx(&rxUart) ) ;
     CHECK_IT( SPC_ini_tx(&txUart) ) ;
     	// uart
-    CHECK_IT( USPC_open(&ucfg) ) ;
+//    CHECK_IT( USPC_open(&ucfg) ) ;
 		// ap
 	S_AP sap = {
 		.ssid = "SC635",
@@ -260,13 +260,13 @@ void app_main()
 					RX_SPC * prx = &rxUart ;
 					TX_SPC * ptx = &txUart ;
 
-					if (SOCKET == msg->orig) {
-						prx = &rxSock ;
-						ptx = &txSock ;
-					}
-
-					if ( SPC_esamina(prx, msg) )
-						esegui(prx, ptx) ;
+//					if (SOCKET == msg->orig) {
+//						prx = &rxSock ;
+//						ptx = &txSock ;
+//					}
+//
+//					if ( SPC_esamina(prx, msg) )
+//						esegui(prx, ptx) ;
 
 					CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
 				}
