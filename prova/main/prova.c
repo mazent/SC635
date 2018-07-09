@@ -10,7 +10,7 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 
-extern bool UIF_beg(void) ;
+extern bool FIF_beg(void) ;
 
 //#define CMD_ECO		((SPC_CMD) 0x0000)
 //
@@ -162,7 +162,7 @@ void app_main()
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
 
-	CHECK_IT( UIF_beg() ) ;
+	CHECK_IT( FIF_beg() ) ;
 
 #elif 0
 	CHECK_IT( TST_beg(tasto) ) ;

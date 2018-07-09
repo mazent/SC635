@@ -8,6 +8,7 @@
 #include "lwip/snmp.h"
 #include "lwip/ethip6.h"
 #include "lwip/tcpip.h"
+#include "lwip/netifapi.h"
 #include "netif/etharp.h"
 #include "netif/ppp/pppoe.h"
 
