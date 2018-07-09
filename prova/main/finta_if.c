@@ -1,5 +1,4 @@
 #include "bsp.h"
-#include "driver/uart.h"
 
 #include "lwip/opt.h"
 #include "lwip/def.h"
@@ -11,6 +10,8 @@
 #include "lwip/tcpip.h"
 #include "netif/etharp.h"
 #include "netif/ppp/pppoe.h"
+
+static const char * TAG = "finta" ;
 
 #define IPADDR4_INIT_BYTES(a,b,c,d) \
         ((u32_t)((d) & 0xff) << 24) | \
@@ -30,8 +31,10 @@ static const ip4_addr_t gway = {
 
 //  Called when a raw link packet is ready to be transmitted. This function should not add any more headers
 
-static err_t uart_linkoutput_fn(struct netif *netif, struct pbuf *p)
+static err_t finta_linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
+	ESP_LOGI(TAG, "linkoutput") ;
+
 	return ERR_OK ;
 }
 
@@ -40,7 +43,7 @@ static err_t uart_linkoutput_fn(struct netif *netif, struct pbuf *p)
 // This function should call the myif_link_output function when the packet is ready.
 // You must set netif->output to the address of this function.
 // If your driver supports ARP, you can simply set netif->output to etharp_output
-static err_t uart_output(struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
+static err_t finta_output(struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
 {
 	return ERR_OK ;
 }
@@ -53,10 +56,10 @@ static err_t uart_output(struct netif *netif, struct pbuf *p, ip_addr_t *ipaddr)
 //     For non-ethernet netifs, this must be set to ip_input (pass the pbuf without link headers, p->payload pointing to the IP header)
 // -----
 
-static err_t uart_init_fn(struct netif *netif)
+static err_t finta_init_fn(struct netif *netif)
 {
 	netif->state = NULL ;
-#if 0
+#if 1
 	netif->hwaddr_len = 6 ;
 	netif->hwaddr[0] = 0x00 ;
 	netif->hwaddr[1] = 0x11 ;
@@ -77,20 +80,20 @@ static err_t uart_init_fn(struct netif *netif)
 	//netif->flags |= NETIF_FLAG_POINTTOPOINT | NETIF_FLAG_LINK_UP ;
 
 	netif->output = etharp_output;
-	netif->linkoutput = uart_linkoutput_fn ;
+	netif->linkoutput = finta_linkoutput_fn ;
 
 	return ERR_OK ;
 }
 
-bool UIF_beg(void)
+bool FIF_beg(void)
 {
 	// the user allocates space for a new struct netif (but does not initialize any part of it) and calls netif_add:
 	static struct netif u_netif ;
 
-	if ( NULL != netif_add(&u_netif, &ipaddr, &netmask, &gway, NULL, uart_init_fn, tcpip_input) ) {
-#if 1
+	if ( NULL != netif_add(&u_netif, &ipaddr, &netmask, &gway, NULL, finta_init_fn, tcpip_input) ) {
+#if 0
 		netif_set_up(&u_netif) ;
-#elif 0
+#elif 1
 		netifapi_autoip_start(&u_netif) ;
 #else
 		netifapi_dhcp_start(&u_netif) ;

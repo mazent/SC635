@@ -157,7 +157,7 @@ void app_main()
 	// ap
 	S_AP sap = {
 		.ssid = "SC635",
-		.max_connection = 2,
+		.max_connection = 1,
 		.auth = AUTH_OPEN
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
