@@ -214,7 +214,11 @@ typedef struct os_messageQ_def {
 typedef struct os_mailQ_def {
     uint32_t queue_sz ;                ///< number of elements in the queue
     uint32_t item_sz ;                 ///< size of an item
-    void                       *pool ; ///< memory array for mail
+	
+	// MZ
+    osMailQId * pId ;
+    const char * nome_l ;     
+    const char * nome_o ;     
 } osMailQDef_t ;
 
 /// Event structure contains detailed information about an event.
@@ -630,8 +634,8 @@ osEvent osMessageGet (osMessageQId queue_id, uint32_t millisec) ;
 #	define osMailQDef(name, queue_sz, type) \
 		extern const osMailQDef_t os_mailQ_def_ ## name
 #else                           // define the object
-#	define osMailQDef(name, queue_sz, type) \
-		const osMailQDef_t os_mailQ_def_ ## name =  { (queue_sz), sizeof (type) }
+#	define osMailQDef(name, queue_sz, type)  \
+	const osMailQDef_t os_mailQ_def_ ## name =  { (queue_sz), sizeof (type) }
 #endif
 
 /// \brief Access a Mail Queue Definition.

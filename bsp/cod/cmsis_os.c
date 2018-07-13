@@ -495,47 +495,206 @@ osEvent osMessageGet(osMessageQId queue_id, uint32_t millisec)
 
 #if (defined (osFeature_MailQ)  &&  (osFeature_MailQ != 0))     // Mail Queues available
 
-///// Create and Initialize mail queue.
-///// \param[in]     queue_def     reference to the mail queue definition obtain with \ref osMailQ
-///// \param[in]     thread_id     thread ID (obtained by \ref osThreadCreate or \ref osThreadGetId) or NULL.
-///// \return mail queue ID for reference by other functions or NULL in case of error.
-///// \note MUST REMAIN UNCHANGED: \b osMailCreate shall be consistent in every CMSIS-RTOS.
-//osMailQId osMailCreate (const osMailQDef_t *queue_def, osThreadId thread_id);
-//
-///// Allocate a memory block from a mail.
-///// \param[in]     queue_id      mail queue ID obtained with \ref osMailCreate.
-///// \param[in]     millisec      \ref CMSIS_RTOS_TimeOutValue or 0 in case of no time-out
-///// \return pointer to memory block that can be filled with mail or NULL in case of error.
-///// \note MUST REMAIN UNCHANGED: \b osMailAlloc shall be consistent in every CMSIS-RTOS.
-//void *osMailAlloc (osMailQId queue_id, uint32_t millisec);
-//
-///// Allocate a memory block from a mail and set memory block to zero.
-///// \param[in]     queue_id      mail queue ID obtained with \ref osMailCreate.
-///// \param[in]     millisec      \ref CMSIS_RTOS_TimeOutValue or 0 in case of no time-out
-///// \return pointer to memory block that can be filled with mail or NULL in case of error.
-///// \note MUST REMAIN UNCHANGED: \b osMailCAlloc shall be consistent in every CMSIS-RTOS.
-//void *osMailCAlloc (osMailQId queue_id, uint32_t millisec);
-//
-///// Put a mail to a queue.
-///// \param[in]     queue_id      mail queue ID obtained with \ref osMailCreate.
-///// \param[in]     mail          memory block previously allocated with \ref osMailAlloc or \ref osMailCAlloc.
-///// \return status code that indicates the execution status of the function.
-///// \note MUST REMAIN UNCHANGED: \b osMailPut shall be consistent in every CMSIS-RTOS.
-//osStatus osMailPut (osMailQId queue_id, void *mail);
-//
-///// Get a mail from a queue.
-///// \param[in]     queue_id      mail queue ID obtained with \ref osMailCreate.
-///// \param[in]     millisec      \ref CMSIS_RTOS_TimeOutValue or 0 in case of no time-out
-///// \return event that contains mail information or error code.
-///// \note MUST REMAIN UNCHANGED: \b osMailGet shall be consistent in every CMSIS-RTOS.
-//osEvent osMailGet (osMailQId queue_id, uint32_t millisec);
-//
-///// Free a memory block from a mail.
-///// \param[in]     queue_id      mail queue ID obtained with \ref osMailCreate.
-///// \param[in]     mail          pointer to the memory block that was obtained with \ref osMailGet.
-///// \return status code that indicates the execution status of the function.
-///// \note MUST REMAIN UNCHANGED: \b osMailFree shall be consistent in every CMSIS-RTOS.
-//osStatus osMailFree (osMailQId queue_id, void *mail);
+/*
+    +-----+                       	  +-----+
+	|     |   put  +---------+  get   |     |
+	|     +--------> spedite +-------->     |
+	|     |        +---------+        |     |
+	| MIT |                           | DST |
+	|     |  alloc +---------+  free  |     |
+	|     <--------+  libere <--------+     |
+	|     |        +---------+        |     |
+	+-----+                           +-----+
+*/
+
+typedef struct os_mailQ_cb {
+    const osMailQDef_t * queue_def ;
+
+    QueueHandle_t libere ;
+    QueueHandle_t spedite ;
+    uint8_t * mem ;
+} os_mailQ_cb_t ;
+
+
+osMailQId osMailCreate(const osMailQDef_t * queue_def, osThreadId thread_id)
+{
+	osMailQId mq = NULL ;
+	os_mailQ_cb_t tmp = { .queue_def = queue_def } ;
+	uint8_t * mail = NULL ;
+
+    assert( !xPortInIsrContext() ) ;
+
+	tmp.spedite = mzQueueCreate(queue_def->queue_sz, sizeof(void *), queue_def->nome_o) ;
+	assert(tmp.spedite) ;
+	if (NULL == tmp.spedite)
+		goto err1 ;
+
+	tmp.libere = mzQueueCreate(queue_def->queue_sz, sizeof(void *), queue_def->nome_l) ;
+	assert(tmp.libere) ;
+	if (NULL == tmp.libere)
+		goto err2 ;
+
+	tmp.mem = pvPortMalloc(queue_def->queue_sz * queue_def->item_sz) ;
+	assert(tmp.mem) ;
+	if (NULL == tmp.mem)
+		goto err3 ;
+
+	// All'inizio tutte le mail sono disponibili
+	mail = tmp.mem ;
+	for (uint32_t i=0 ; i<queue_def->queue_sz ; i++, mail += queue_def->item_sz)
+		(void) xQueueSend(tmp.libere, &mail, 0) ;
+
+	mq = pvPortMalloc(sizeof(os_mailQ_cb_t)) ;
+	assert(mq) ;
+	if (NULL == mq)
+		goto err4 ;
+
+	*(queue_def->pId) = mq ;
+	*mq = tmp ;
+	goto err1 ;
+
+err4:
+	vPortFree(tmp.mem) ;
+err3:
+	vQueueDelete(tmp.libere) ;
+err2:
+	vQueueDelete(tmp.spedite) ;
+err1:
+    return mq ;
+}
+
+void os_MailDelete(osMailQId mq)
+{
+	assert( !xPortInIsrContext() ) ;
+	
+	if (mq) {
+		if (mq->libere) {
+			vQueueDelete(mq->libere) ;
+			mq->libere = NULL ;
+		}
+
+		if (mq->spedite) {
+			vQueueDelete(mq->spedite) ;
+			mq->spedite = NULL ;
+		}
+
+		if (mq->mem) {
+			vPortFree(mq->mem) ;
+			mq->mem = NULL ;
+		}
+
+		vPortFree(mq) ;
+	}
+}
+
+void * osMailAlloc(osMailQId queue_id, uint32_t millisec)
+{
+	void * mail = NULL ;
+
+	assert(queue_id) ;
+
+	if (NULL == queue_id) {
+	}
+	else if (xPortInIsrContext()) {
+		(void) xQueueReceiveFromISR(queue_id->libere, &mail, NULL) ;
+
+		portYIELD_FROM_ISR() ;
+	}
+	else {
+		(void) xQueueReceive(queue_id->libere, &mail, millisec) ;
+	}
+
+	return mail ;
+}
+
+void * osMailCAlloc(osMailQId queue_id, uint32_t millisec)
+{
+	void * mail = osMailAlloc(queue_id, millisec) ;
+	if (mail)
+		memset(mail, 0, queue_id->queue_def->item_sz) ;
+
+	return mail ;
+}
+
+osStatus osMailFree(osMailQId queue_id, void *mail)
+{
+	assert(queue_id) ;
+	assert(mail) ;
+
+	if (NULL == queue_id)
+		return osErrorParameter ;
+	else if (NULL == mail)
+		return osErrorParameter ;
+	else if (xPortInIsrContext()) {
+		osStatus esito = osOK ;
+
+		if (pdTRUE != xQueueSendFromISR(queue_id->libere, &mail, NULL))
+			esito = osErrorOS ;
+
+		portYIELD_FROM_ISR() ;
+
+		return esito ;
+	}
+	else if (pdTRUE == xQueueSend(queue_id->libere, &mail, 0))
+		return osOK ;
+	else
+		return osErrorOS ;
+}
+
+osStatus osMailPut(osMailQId queue_id, void * mail)
+{
+	assert(queue_id) ;
+	assert(mail) ;
+
+	if (NULL == queue_id)
+		return osErrorParameter ;
+	else if (NULL == mail)
+		return osErrorParameter ;
+	else if (xPortInIsrContext()) {
+		osStatus esito = osOK ;
+
+		if (pdTRUE != xQueueSendFromISR(queue_id->spedite, &mail, NULL))
+			esito = osErrorOS ;
+
+		portYIELD_FROM_ISR() ;
+
+		return esito ;
+	}
+	else if (pdTRUE == xQueueSend(queue_id->spedite, &mail, 0))
+		return osOK ;
+	else
+		return osErrorOS ;
+}
+
+osEvent osMailGet(osMailQId queue_id, uint32_t millisec)
+{
+	osEvent event ;
+
+	assert(queue_id) ;
+
+	if (NULL == queue_id)
+		event.status = osErrorParameter ;
+	else if (xPortInIsrContext()) {
+#if 1
+		// Dentro una interruzione gestite le mail?
+		assert(false) ;
+		event.status = osErrorISR ;
+#else
+		if (xQueueReceiveFromISR(queue_id->spedite, &event.value.p, NULL) == pdTRUE)
+			event.status = osEventMail ;
+		else
+			event.status = osOK ;
+
+		portYIELD_FROM_ISR() ;
+#endif
+	}
+	else if (pdTRUE == xQueueReceive(queue_id->spedite, &event.value.p, millisec))
+		event.status = osEventMail ;
+	else
+		event.status = osOK ;
+
+	return event ;
+}
 
 #endif  // Mail Queues available
 
