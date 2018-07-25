@@ -127,7 +127,7 @@ bool RID_doip(bool * p)
 	if (NULL == p)
 		return false ;
 	else if (ESITO == stato) {
-		*p = 0 == gpio_get_level(RISUL) ;
+		*p = 0 != gpio_get_level(RISUL) ;
 		return true ;
 	}
 	else
