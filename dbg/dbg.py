@@ -47,6 +47,7 @@ class SC635(gui.New_Toplevel_1):
         self._imposta_tab(TAB_CHIUSA)
 
         self.dispo = None
+        self.timerLed = None
 
         # Code per la comunicazione fra grafica e ciccia
         self.codaEXE = coda.Queue()
@@ -284,6 +285,23 @@ class SC635(gui.New_Toplevel_1):
         gui_support.Messaggio.set("Aspetta ...")
         self.codaEXE.put(("led", rosso))
 
+    def _led_ripetuto(self):
+        rosso = '1' == gui_support.led.get()
+        gui_support.led.set(not rosso)
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("led", not rosso))
+
+        self.timerLed = self.Button21.after(1000, self._led_ripetuto)
+
+    def ledr(self):
+        if self.Button21['text'] == 'Ripetutamente':
+            # Inizio prova
+            self.Button21['text'] = 'Basta'
+            self.timerLed = self.Button21.after(1000, self._led_ripetuto)
+        else:
+            self.Button21.after_cancel(self.timerLed)
+            self.Button21['text'] = 'Ripetutamente'
+
     def rid_ini(self):
         gui_support.Messaggio.set("Aspetta ...")
         self.codaEXE.put(("rid_ini", ))
@@ -301,7 +319,7 @@ class SC635(gui.New_Toplevel_1):
         if esito:
             ms = (ms + 9) // 10
             ms *= 10
-            gui_support.phy_ms.get(ms)
+            gui_support.phy_ms.set(ms)
             gui_support.Messaggio.set("Aspetta ...")
             self.codaEXE.put(("phy_reset", ms))
         else:

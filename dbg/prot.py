@@ -222,7 +222,10 @@ class PROT(object):
         # Mi aspetto almeno: inizio + comando[2] + crc[2] + fine
         daLeggere = 6
         while not trovato:
-            letti = bytearray(self.uart.read(daLeggere))
+            sdati = self.uart.read(daLeggere)
+            if sdati is None:
+                continue
+            letti = bytearray(sdati)
             if len(letti) == 0:
                 break
             for rx in letti:
