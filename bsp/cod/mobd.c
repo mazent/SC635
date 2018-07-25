@@ -2,7 +2,7 @@
 
 #include "driver/gpio.h"
 
-#define SC635		0
+#define SC635		1
 
 #define MOBD_SEL		GPIO_SEL_33
 #define MOBD    		GPIO_NUM_33
