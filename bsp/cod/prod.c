@@ -27,6 +27,7 @@ static bool init(void)
 
 	    esp_err_t err = nvs_flash_init_partition(PARTITION) ;
 	    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+	    	ESP_LOGW(TAG, "cancello %s", PARTITION) ;
 #if 0
 	    	// This is a read-only partition!
 	    	break ;
@@ -101,9 +102,18 @@ bool PROD_write_board(const char * p)
 		}
 
 		err = nvs_set_str(h, KEY_BSN, p) ;
-		if (err != ESP_OK)
+		if (err != ESP_OK) {
 			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
-		esito = err == ESP_OK ;
+			break ;
+		}
+
+		err = nvs_commit(h);
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
+			break ;
+		}
+
+		esito = true ;
 	} while (false) ;
 
 	if (INVALID_HANDLE != h)
@@ -126,8 +136,10 @@ bool PROD_read_product(PROD_PSN * p)
 			break ;
 
 		esp_err_t err = nvs_open_from_partition(PARTITION, NAMESPACE, NVS_READONLY, &h) ;
-		if (err != ESP_OK)
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 			break ;
+		}
 
 		err = nvs_get_str(h, KEY_PSN, p->psn, &p->len) ;
 		esito = err == ESP_OK ;
@@ -152,11 +164,24 @@ bool PROD_write_product(const char * p)
 			break ;
 
 		esp_err_t err = nvs_open_from_partition(PARTITION, NAMESPACE, NVS_READWRITE, &h) ;
-		if (err != ESP_OK)
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
 			break ;
+		}
 
 		err = nvs_set_str(h, KEY_PSN, p) ;
-		esito = err == ESP_OK ;
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
+			break ;
+		}
+
+		err = nvs_commit(h);
+		if (err != ESP_OK) {
+			ESP_LOGW(TAG, "%s[%d]: %s", __FILE__, __LINE__, esp_err_to_name(err)) ;
+			break ;
+		}
+
+		esito = true ;
 	} while (false) ;
 
 	if (INVALID_HANDLE != h)
