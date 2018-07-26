@@ -1,4 +1,4 @@
-#ifdef AGGIORNA_H_
+#ifndef AGGIORNA_H_
 #define AGGIORNA_H_
 
 #include "bsp.h"
