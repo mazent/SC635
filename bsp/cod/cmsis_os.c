@@ -92,6 +92,23 @@ static QueueHandle_t mzQueueCreate(const UBaseType_t uxQueueLength, const UBaseT
 //
 //#endif    // System Timer available
 
+//  ==== Estensioni ====
+
+void * os_malloc(size_t dim)
+{
+	if (dim)
+		return pvPortMalloc(dim) ;
+	else
+		return NULL ;
+}
+
+void os_free(void * v)
+{
+	if (v)
+		vPortFree(v) ;
+}
+
+
 //  ==== Thread Management ====
 
 osThreadId osThreadCreate(const osThreadDef_t * td, void * argument)

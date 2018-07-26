@@ -274,6 +274,11 @@ uint32_t osKernelSysTick (void) ;
 
 #endif    // System Timer available
 
+//  ==== Estensioni ====
+
+void * os_malloc(size_t) ;
+void os_free(void *) ;
+
 //  ==== Thread Management ====
 
 /// Create a Thread Definition with function, priority, and stack requirements.

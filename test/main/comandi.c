@@ -5,6 +5,7 @@
 #include "led.h"
 #include "rid.h"
 #include "phy.h"
+#include "aggiorna.h"
 
 extern int cntTst ;
 
@@ -25,6 +26,10 @@ extern int cntTst ;
 #define CMD_RID_T 	((SPC_CMD) 0x0207)
 #define CMD_RID_E 	((SPC_CMD) 0x0208)
 #define CMD_PHYRST	((SPC_CMD) 0x0209)
+
+#define CMD_AGG_I	((SPC_CMD) 0x0300)
+#define CMD_AGG_D	((SPC_CMD) 0x0301)
+#define CMD_AGG_F	((SPC_CMD) 0x0302)
 
 // Sala di lettura
 static union {
@@ -178,6 +183,42 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 			SPC_resp(tx, cmd, NULL, 0) ;
 
 			PHY_reset(dati[0]) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+
+	case CMD_AGG_I:
+		if (sizeof(uint32_t) == dim) {
+			uint32_t bdim ;
+
+			SPC_resp(tx, cmd, NULL, 0) ;
+
+			memcpy(&bdim, dati, dim) ;
+			AGG_beg(bdim) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_AGG_D:
+		if (dim > sizeof(uint32_t)) {
+			uint32_t ofs ;
+
+			memcpy(&ofs, dati, dim) ;
+			if ( AGG_dat(dati + sizeof(uint32_t), dim - sizeof(uint32_t), ofs) )
+				SPC_resp(tx, cmd, NULL, 0) ;
+			else
+				SPC_err(tx, cmd) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_AGG_F:
+		if (0 == dim) {
+			if ( AGG_end() )
+				SPC_resp(tx, cmd, NULL, 0) ;
+			else
+				SPC_err(tx, cmd) ;
 		}
 		else
 			SPC_err(tx, cmd) ;

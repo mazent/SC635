@@ -94,7 +94,7 @@ bool SPC_ini_rx(RX_SPC * p)
 	p->nega = false ;
 
 	if (NULL == p->rx) {
-		p->rx = malloc(p->DIM_RX) ;
+		p->rx = os_malloc(p->DIM_RX) ;
 		esito = p->rx != NULL ;
 	}
 	else
@@ -108,7 +108,7 @@ bool SPC_ini_tx(TX_SPC * p)
 	bool esito = false ;
 
 	if (NULL == p->tx) {
-		p->tx = malloc(p->DIM_TX) ;
+		p->tx = os_malloc(p->DIM_TX) ;
 		esito = p->tx != NULL ;
 	}
 	else
