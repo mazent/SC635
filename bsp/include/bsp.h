@@ -45,25 +45,18 @@
 // Print
 // ==========================================
 
-#ifdef NDEBUG
-#else
 	// Every file can enable its DBG_xxx
 #ifdef STAMPA_DBG
 #	define DBG_ABIL					1
 
 #	define DBG_ERR						ESP_LOGE("file", "%s[%d]", __FILE__, __LINE__) ;
-#	define DBG_PRINTF(f, ...)			printf(f, ##__VA_ARGS__)
-#	define DBG_PUTS(a)					puts(a)
+#	define DBG_PRINTF(f, ...)			ESP_LOGD("dbg", f, ##__VA_ARGS__)
+#	define DBG_PUTS(a)					ESP_LOGD("dbg", a)
 #else
 #	define DBG_ERR
 #	define DBG_PRINTF(f, ...)
 #	define DBG_PUTS(a)
 #endif
-#endif
-
-
-
-
 
 
 #endif
