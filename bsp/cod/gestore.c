@@ -230,13 +230,13 @@ bool GST_beg(S_GST_CFG * pCB)
 		if (NULL == pCB->msg)
 			break ;
 
+		cfg = *pCB ;
+
 		osThreadDef(gstSRV, osPriorityNormal, 1, STACK) ;
 		tid = osThreadCreate(osThread(gstSRV), NULL) ;
 		assert(tid) ;
 		if (NULL == tid)
 			break ;
-
-		cfg = *pCB ;
 
 		esito = true ;
 

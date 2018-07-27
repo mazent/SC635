@@ -1,7 +1,8 @@
+#define STAMPA_DBG
 #include "aggiorna.h"
 #include "esp_ota_ops.h"
 
-static const char *TAG = "agg";
+//static const char *TAG = "agg";
 
 static uint8_t * nuovo = NULL ;
 static uint32_t dimNuovo = 0 ;

@@ -204,7 +204,7 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 		if (dim > sizeof(uint32_t)) {
 			uint32_t ofs ;
 
-			memcpy(&ofs, dati, dim) ;
+			memcpy(&ofs, dati, sizeof(uint32_t)) ;
 			if ( AGG_dat(dati + sizeof(uint32_t), dim - sizeof(uint32_t), ofs) )
 				SPC_resp(tx, cmd, NULL, 0) ;
 			else
