@@ -38,8 +38,8 @@ class DISPOSITIVO(object):
     # Varie
     # ============================================
 
-    def dim_max(self, cmd, dati):
-        return self.prot.dim_max(cmd, dati)
+    def dim_max(self, cmd, dati, extra=None):
+        return self.prot.dim_max(cmd, dati, extra)
 
     def Eco(self, dati=None):
         if dati is None:
@@ -127,3 +127,24 @@ class DISPOSITIVO(object):
     def phy_reset(self, ms):
         prm = bytearray([ms])
         return self.prot.cmdPrmVoid(0x0209, prm)
+
+    # ============================================
+    # Aggiornamento
+    # ============================================
+
+    def agg_inizio(self, dim):
+        prm = struct.pack('<I', dim)
+        return self.prot.cmdPrmVoid(0x0300, prm)
+
+    def agg_dati(self, ofs, dati):
+        prm = struct.pack("<I", ofs)
+        dim = self.dim_max(0x0301, dati, prm)
+
+        prm += dati[:dim]
+        if self.prot.cmdPrmVoid(0x0301, prm):
+            return dim
+        else:
+            return 0
+
+    def agg_fine(self):
+        return self.prot.cmdVoidVoid(0x0302)

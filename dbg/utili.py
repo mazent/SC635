@@ -9,8 +9,8 @@ import binascii
 import threading
 import struct
 import os
-import psutil
-import webbrowser
+#import psutil
+#import webbrowser
 import random
 import string
 
@@ -361,36 +361,36 @@ def elimina_estensione(completo):
 # dato il nome del programma, restituisce il nome col percorso
 # (se e' in esecuzione)
 
-def trova_nome_exe(prog):
-    for p in psutil.process_iter(attrs=["name", "exe", "cmdline"]):
-        if prog == p.info['name']:
-            return p.exe()
-
-    return None
+# def trova_nome_exe(prog):
+#     for p in psutil.process_iter(attrs=["name", "exe", "cmdline"]):
+#         if prog == p.info['name']:
+#             return p.exe()
+#
+#     return None
 
 # apre l'indirizzo con chrome o col predefinito
 # restituisce il percorso completo di chrome
 
-def http(indirizzo, crome):
-    if crome is not None:
-        # gia' registrato
-        c = webbrowser.get('chrome')
-        c.open(indirizzo)
-    else:
-        # lo cerco
-        crome = trova_nome_exe('chrome.exe')
-        try:
-            if crome is None:
-                # apro col predefinito
-                webbrowser.open(indirizzo)
-            else:
-                webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(crome))
-                c = webbrowser.get('chrome')
-                c.open(indirizzo)
-        except webbrowser.Error:
-            crome = None
-
-    return crome
+# def http(indirizzo, crome):
+#     if crome is not None:
+#         # gia' registrato
+#         c = webbrowser.get('chrome')
+#         c.open(indirizzo)
+#     else:
+#         # lo cerco
+#         crome = trova_nome_exe('chrome.exe')
+#         try:
+#             if crome is None:
+#                 # apro col predefinito
+#                 webbrowser.open(indirizzo)
+#             else:
+#                 webbrowser.register('chrome', None, webbrowser.BackgroundBrowser(crome))
+#                 c = webbrowser.get('chrome')
+#                 c.open(indirizzo)
+#         except webbrowser.Error:
+#             crome = None
+#
+#     return crome
 
 def cod_finto(dim):
     base = ['1', '2', '3', '4', '5', '6', '7', '8', '9']

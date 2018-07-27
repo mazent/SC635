@@ -10,6 +10,7 @@ from __future__ import print_function
 import threading
 
 import gui_support
+import utili
 
 
 class taskEsecutore(threading.Thread):
@@ -28,6 +29,7 @@ class taskEsecutore(threading.Thread):
             'ecoFinePerErrore': self._eco_fine_x_errore,
 
             'eco': self._eco,
+            'aggiorna': self._aggiorna,
 
             'leggi_cp': self._cod_prod_l,
             'scrivi_cp': self._cod_prod_s,
@@ -54,7 +56,7 @@ class taskEsecutore(threading.Thread):
             elif "Dispositivo" == lavoro[0]:
                 self.dispo = lavoro[1]
             elif not lavoro[0] in self.comando:
-                pass
+                gui_support.Messaggio.set("? comando sconosciuto ?")
             else:
                 self.comando[lavoro[0]](lavoro)
 
@@ -81,6 +83,41 @@ class taskEsecutore(threading.Thread):
             gui_support.Messaggio.set("Eco: OK")
         else:
             gui_support.Messaggio.set("Eco: ERRORE")
+
+    def _aggiorna(self, prm):
+        try:
+            dati = None
+            with open(prm[1], "rb") as fileBIN:
+                dati = fileBIN.read()
+
+            if dati is None:
+                raise utili.problema("Aggiorna: file illeggibile")
+
+            dimdati = len(dati)
+            if not self.dispo.agg_inizio(dimdati):
+                raise utili.problema("Aggiorna: ERRORE inizio")
+
+            # cinema
+            prog = 0
+            gui_support.aggiorna.set(0)
+
+            while len(dati):
+                dimcorr = self.dispo.agg_dati(prog, dati)
+                if dimcorr == 0:
+                    raise utili.problema("Aggiorna: ERRORE dati")
+                prog += dimcorr
+                perc = 100.0 * float(prog) / float(dimdati)
+                gui_support.aggiorna.set(int(perc))
+                dati = dati[dimcorr:]
+
+            if not self.dispo.agg_fine():
+                raise utili.problema("Aggiorna: ERRORE fine")
+
+            gui_support.Messaggio.set("Aggiorna: OK")
+
+        except utili.problema as err:
+            gui_support.Messaggio.set(str(err))
+
 
     # ========== PRODUZIONE ===================================================
 

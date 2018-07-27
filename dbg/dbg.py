@@ -221,6 +221,21 @@ class SC635(gui.New_Toplevel_1):
     def ecoProva(self, dummy):
         self.eco.Bottone()
 
+    def aggiorna(self):
+        opzioni = {
+            'parent': self.master,
+            'filetypes': [('DoIP', '.bin')],
+            'title': 'Scegli il file'
+        }
+        filename = dialogo.askopenfilename(**opzioni)
+        if filename is None:
+            gui_support.Messaggio.set("Hai cambiato idea?")
+        elif 0 == len(filename):
+            gui_support.Messaggio.set("Hai cambiato idea?")
+        else:
+            gui_support.Messaggio.set("Aspetta ...")
+            self.codaEXE.put(("aggiorna", filename))
+
     # ========== PRODUZIONE ===================================================
 
     def leggi_cp(self):

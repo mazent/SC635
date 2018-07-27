@@ -159,7 +159,7 @@ class PROT(object):
 
     # Restituisce il numero di byte trasmissibili
 
-    def dim_max(self, cmd, dati):
+    def dim_max(self, cmd, dati, extra=None):
         if cmd is None:
             return self.mdp - 2
         else:
@@ -168,6 +168,10 @@ class PROT(object):
             tmp = bytearray(struct.pack('<H', cmd))
             for x in tmp:
                 self._aggiungi(pkt, x)
+
+            if extra is not None:
+                for x in extra:
+                    self._aggiungi(pkt, x)
 
             dim = 0
             for x in dati:
