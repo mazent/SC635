@@ -22,7 +22,7 @@ if orig is not None:
 
     cif = encryptor.update(orig) + encryptor.finalize()
 
-    with open('test.cif', 'wb') as ct:
+    with open('test.agg', 'wb') as ct:
         ct.write(iv)
         ct.write(cif)
 
