@@ -224,7 +224,7 @@ class SC635(gui.New_Toplevel_1):
     def aggiorna(self):
         opzioni = {
             'parent': self.master,
-            'filetypes': [('DoIP', '.bin')],
+            'filetypes': [('DoIP', '.agg')],
             'title': 'Scegli il file'
         }
         filename = dialogo.askopenfilename(**opzioni)
