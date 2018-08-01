@@ -2,6 +2,8 @@
 #include "aggiorna.h"
 #include "esp_ota_ops.h"
 
+#include "mbedtls/aes.h"
+
 static const char *TAG = "agg";
 
 static uint8_t * nuovo = NULL ;
@@ -16,7 +18,7 @@ static bool decifra(void)
 {
 	bool esito = false ;
 	mbedtls_aes_context aes = { 0 } ;
-	const uint8_t * iv = nuovo ;
+	uint8_t * iv = nuovo ;
 	const uint8_t * ct = nuovo + 16 ;
 	const uint32_t DIM = dimNuovo - 16 ;
 	uint8_t * pt = NULL ;
@@ -37,6 +39,13 @@ static bool decifra(void)
 	} while (false) ;
 
 	mbedtls_aes_free(&aes) ;
+
+	if (esito) {
+		os_free(nuovo) ;
+
+		nuovo = pt ;
+		dimNuovo = DIM ;
+	}
 
 	return esito ;
 }

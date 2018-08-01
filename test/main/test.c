@@ -9,6 +9,7 @@
 #include "led.h"
 #include "rid.h"
 #include "phy.h"
+#include "versione.h"
 
 #include "driver/gpio.h"
 
@@ -239,6 +240,7 @@ void app_main()
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
 
+	ESP_LOGI(TAG, "versione %d", VER) ;
 
 	// Eseguo i comandi
 	while (true) {
