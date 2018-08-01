@@ -1,31 +1,46 @@
+from __future__ import print_function
+
 import os
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
+import sys
+import cidec
+import chiavi
 
-orig = None
-with open('test.bin', 'rb') as pt:
-    orig = pt.read()
+"""
+    Preparazione del file per l'aggiornamento:
+        1) si aggiunge una intestazione che porta la dimensione a multiplo di 16
+        2) si cifra con un iv
+        3) si firma (iv + cifrato)
+        4) il file per l'aggiornamento e' la concatenazione: iv || cifrato || firma
+"""
 
-if orig is not None:
-    mancano = len(orig) % 16
-    while mancano:
-        orig += bytearray([0xFF])
-        mancano -= 1
+class problema(Exception):
 
-    backend = default_backend()
+    def __init__(self, msg):
+        Exception.__init__(self)
+        self.msg = msg
 
-    key = bytearray([0x57, 0xF4, 0x0F, 0xF2, 0x91, 0xBF, 0xDC, 0x8E, 0x69, 0x12, 0x1C, 0xC4, 0xE3, 0x99, 0x05, 0x05, 0xEA, 0xEA, 0x82, 0x3A, 0x15, 0x1A, 0x39, 0x6B, 0xA9, 0xFE, 0xE4, 0x68, 0x18, 0x75, 0xF4, 0x08])
-    key = bytes(key)
-    iv = os.urandom(16)
+    def __str__(self):
+        return self.msg
 
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=backend)
-    encryptor = cipher.encryptor()
 
-    cif = encryptor.update(orig) + encryptor.finalize()
+if __name__ == '__main__':
+    try:
+        if len(sys.argv) != 3:
+            raise problema('passare il nome del file in chiaro e quello cifrato')
 
-    with open('test.agg', 'wb') as ct:
-        ct.write(iv)
-        ct.write(cif)
+        chiaro = None
+        with open(sys.argv[1], 'rb') as pt:
+            chiaro = pt.read()
 
-#decryptor = cipher.decryptor()
-#decryptor.update(ct) + decryptor.finalize()
+        iv = os.urandom(16)
+        cifrato = cidec.cifra(chiaro, iv, chiavi.KEY_CIF)
+
+        firma = cidec.firma(iv + cifrato, chiavi.KEY_MAC)
+
+        with open(sys.argv[2], 'wb') as agg:
+            agg.write(iv)
+            agg.write(cifrato)
+            agg.write(firma)
+
+    except problema as err:
+        print(err)
