@@ -42,11 +42,15 @@ static union {
 	PROD_BSN bsn ;
 } sdl ;
 
+static const char * TAG = "cmd";
+
 void esegui(RX_SPC * rx, TX_SPC * tx)
 {
 	SPC_CMD cmd ;
 	uint8_t * dati = rx->rx + sizeof(SPC_CMD) ;
 	int dim = rx->dimRx - sizeof(SPC_CMD) ;
+
+	ESP_LOGI(TAG, "cmd %04X[%d]", cmd, dim) ;
 
 	memcpy(&cmd, rx->rx, sizeof(SPC_CMD)) ;
 
@@ -231,7 +235,7 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 
 	case CMD_AGG_V:
 		if (0 == dim)
-			SPC_resp(tx, cmd, VERSIONE, 4) ;
+			SPC_resp(tx, cmd, &VERSIONE, sizeof(VERSIONE)) ;
 		else
 			SPC_err(tx, cmd) ;
 		break ;

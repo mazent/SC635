@@ -19,7 +19,7 @@
 
 extern void esegui(RX_SPC *, TX_SPC *) ;
 
-static const char *TAG = "test";
+static const char * TAG = "test";
 
 #ifdef NDEBUG
 const uint32_t VERSIONE = (1 << 24) + VER ;
@@ -247,7 +247,8 @@ void app_main()
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
 
-	ESP_LOGI(TAG, "versione %d", VER) ;
+	ESP_LOGI(TAG, "versione %d", VERSIONE) ;
+	ESP_LOGI(TAG, "data &s", DATA) ;
 
 	// Eseguo i comandi
 	while (true) {
