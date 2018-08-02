@@ -247,8 +247,12 @@ void app_main()
 	} ;
 	CHECK_IT( AP_beg(&sap) ) ;
 
-	ESP_LOGI(TAG, "versione %d", VERSIONE) ;
-	ESP_LOGI(TAG, "data &s", DATA) ;
+#ifdef NDEBUG
+	ESP_LOGI(TAG, "vers %d", VER) ;
+#else
+	ESP_LOGI(TAG, "vers %d (dbg)", VER) ;
+#endif
+	ESP_LOGI(TAG, "data %s", DATA) ;
 
 	// Eseguo i comandi
 	while (true) {

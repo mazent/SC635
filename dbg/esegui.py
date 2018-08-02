@@ -30,6 +30,7 @@ class taskEsecutore(threading.Thread):
 
             'eco': self._eco,
             'aggiorna': self._aggiorna,
+            'ver': self._versione,
 
             'leggi_cp': self._cod_prod_l,
             'scrivi_cp': self._cod_prod_s,
@@ -118,6 +119,25 @@ class taskEsecutore(threading.Thread):
         except utili.problema as err:
             gui_support.Messaggio.set(str(err))
 
+    def _versione(self, _):
+        conta = 0
+
+        ver = self.dispo.agg_ver()
+        if ver is not None:
+            gui_support.veri.set(utili.strVer(ver))
+            conta += 1
+
+        data = self.dispo.agg_data()
+        if data is not None:
+            gui_support.verd.set(data)
+            conta += 1
+
+        if conta == 2:
+            gui_support.Messaggio.set("Versione: OK")
+        elif conta == 1:
+            gui_support.Messaggio.set("Versione: QUASI")
+        else:
+            gui_support.Messaggio.set("Versione: ERRORE")
 
     # ========== PRODUZIONE ===================================================
 

@@ -236,6 +236,12 @@ class SC635(gui.New_Toplevel_1):
             gui_support.Messaggio.set("Aspetta ...")
             self.codaEXE.put(("aggiorna", filename))
 
+    def ver(self):
+        gui_support.veri.set('---')
+        gui_support.verd.set('---')
+        gui_support.Messaggio.set("Aspetta ...")
+        self.codaEXE.put(("ver", ))
+
     # ========== PRODUZIONE ===================================================
 
     def leggi_cp(self):

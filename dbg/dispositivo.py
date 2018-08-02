@@ -148,3 +148,15 @@ class DISPOSITIVO(object):
 
     def agg_fine(self):
         return self.prot.cmdVoidVoid(0x0302)
+
+    def agg_ver(self):
+        ver = self.prot.cmdVoidRsp(0x0303, 4)
+        if ver is not None:
+            return struct.unpack("<I", ver)[0]
+        return ver
+
+    def agg_data(self):
+        data = self.prot.cmdVoidRsp(0x0304)
+        if data is not None:
+            data = data.decode('ascii')
+        return data

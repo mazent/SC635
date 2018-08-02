@@ -102,16 +102,15 @@ def strVer(v):
     if v == 0:
         ver = '???'
     else:
-        if v & 0x80000000:
-            ver += "(dbg) "
-            v = ~v
-            v &= 0xFFFFFFFF
-
         vmag = v >> 24
         vmin = v & 0xFFFFFF
 
-        ver += str(vmag)
-        ver += "."
+        if vmag == 0:
+            ver += "(dbg) "
+        else:
+            ver += str(vmag)
+            ver += "."
+
         ver += str(vmin)
 
     return ver
