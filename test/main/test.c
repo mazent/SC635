@@ -21,6 +21,13 @@ extern void esegui(RX_SPC *, TX_SPC *) ;
 
 static const char *TAG = "test";
 
+#ifdef NDEBUG
+const uint32_t VERSIONE = (1 << 24) + VER ;
+#else
+const uint32_t VERSIONE = VER ;
+#endif
+const char * DATA = __DATE__ ;
+
 // memoria per i messaggi
 osPoolDef(pbcid, NUM_BUFFER, UN_BUFFER) ;
 static osPoolId pbcid = NULL ;

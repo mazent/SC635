@@ -8,6 +8,9 @@
 #include "aggiorna.h"
 
 extern int cntTst ;
+extern const uint32_t VERSIONE ;
+extern const char * DATA ;
+
 
 #define CMD_ECO		((SPC_CMD) 0x0000)
 
@@ -30,6 +33,8 @@ extern int cntTst ;
 #define CMD_AGG_I	((SPC_CMD) 0x0300)
 #define CMD_AGG_D	((SPC_CMD) 0x0301)
 #define CMD_AGG_F	((SPC_CMD) 0x0302)
+#define CMD_AGG_V	((SPC_CMD) 0x0303)
+#define CMD_AGG_DC	((SPC_CMD) 0x0304)
 
 // Sala di lettura
 static union {
@@ -219,6 +224,22 @@ void esegui(RX_SPC * rx, TX_SPC * tx)
 				SPC_resp(tx, cmd, NULL, 0) ;
 			else
 				SPC_err(tx, cmd) ;
+		}
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+
+	case CMD_AGG_V:
+		if (0 == dim)
+			SPC_resp(tx, cmd, VERSIONE, 4) ;
+		else
+			SPC_err(tx, cmd) ;
+		break ;
+	case CMD_AGG_DC:
+		if (0 == dim) {
+			int d = strlen(DATA) ;
+
+			SPC_resp(tx, cmd, DATA, d) ;
 		}
 		else
 			SPC_err(tx, cmd) ;
