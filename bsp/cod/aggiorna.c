@@ -3,6 +3,7 @@
 #include "esp_ota_ops.h"
 
 #include "mbedtls/aes.h"
+#include "mbedtls/md.h"
 
 static const char *TAG = "agg";
 
@@ -32,7 +33,7 @@ static bool valido(void)
 	const void * firman = nuovo + DIM ;
 	uint8_t firma[DIM_BLOCCO] ;
 
-	if (0 != mbedtls_md_hmac(
+	if (0 == mbedtls_md_hmac(
 			 mbedtls_md_info_from_type(MBEDTLS_MD_SHA256),
 			 kmac, sizeof(kmac),
 			 nuovo, DIM,
@@ -83,7 +84,7 @@ static bool decifra(void)
 		os_free(nuovo) ;
 		nuovo = NULL ;
 
-		char * pt = fw ;
+		char * pt = (char *) fw ;
 		fwOfs = 0 ;
 		if (0 != memcmp(pt, INIZIO, DIM_INIZIO)) {
 			DBG_ERR ;
@@ -166,8 +167,10 @@ bool AGG_end(void)
 		if (NULL == nuovo)
 			break ;
 
-		if ( !valido() )
+		if ( !valido() ) {
+			DBG_ERR ;
 			break ;
+		}
 
 		if ( !decifra() ) {
 			DBG_ERR ;
