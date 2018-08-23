@@ -238,6 +238,12 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
             printf("SYSTEM_EVENT_STA_CONNECTED\r\n");
             wifi_is_connected = true;
 
+			{			
+				uint8_t mac[6] = {0} ;
+				esp_wifi_get_mac(WIFI_IF_STA, mac) ;
+				ESP_LOGI(TAG, "STA: "MACSTR"", MAC2STR(mac)) ;
+			}
+
             esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)tcpip_adapter_sta_input_eth_output);
             break;
 
@@ -258,6 +264,17 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
             esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
             break;
+			
+		case SYSTEM_EVENT_AP_START:                 
+			ESP_LOGI(TAG, "SYSTEM_EVENT_AP_START");
+
+			{			
+				uint8_t mac[6] = {0} ;
+				esp_wifi_get_mac(WIFI_IF_AP, mac) ;
+				ESP_LOGI(TAG, "AP: "MACSTR"", MAC2STR(mac)) ;
+			}
+			break ;
+			
 
         case SYSTEM_EVENT_AP_STADISCONNECTED:
             printf("SYSTEM_EVENT_AP_STADISCONNECTED\r\n");
@@ -268,6 +285,11 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
         case SYSTEM_EVENT_ETH_CONNECTED:
             printf("SYSTEM_EVENT_ETH_CONNECTED\r\n");
             ethernet_is_connected = true;
+			{			
+				uint8_t mac[6] = {0} ;
+				esp_eth_get_mac(mac) ;
+				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
+			}
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
@@ -286,6 +308,14 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
+	
+	{
+		uint8_t mac[6] = {0} ;
+
+	    esp_efuse_mac_get_default(mac) ;
+
+	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
+	}
     
     eth_queue_handle = xQueueCreate(CONFIG_DMA_RX_BUF_NUM, sizeof(tcpip_adapter_eth_input_t));
     xTaskCreate(eth_task, "eth_task", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL);
