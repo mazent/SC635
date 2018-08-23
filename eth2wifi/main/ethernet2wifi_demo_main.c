@@ -138,6 +138,7 @@ static void eth_task(void* pvParameter)
     for (;;) {
         if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
             if (msg.len > 0) {
+#if 0 // MZ
                 if (!ethernet2wifi_mac_status_get()) {
                     memcpy(eth_mac, (uint8_t*)msg.buffer + 6, sizeof(eth_mac));
                     ESP_ERROR_CHECK(esp_wifi_start());
@@ -149,7 +150,7 @@ static void eth_task(void* pvParameter)
 #endif
                     ethernet2wifi_mac_status_set(true);
                 }
-
+#endif
                 if (wifi_is_connected) {
 #ifdef CONFIG_ETH_TO_STATION_MODE
                     esp_wifi_internal_tx(ESP_IF_WIFI_STA, msg.buffer, msg.len - 4);
@@ -293,12 +294,18 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				esp_eth_get_mac(mac) ;
 				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
 			}
+#if 1 // MZ
+	   esp_wifi_start();
+#endif
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
             printf("SYSTEM_EVENT_ETH_DISCONNECTED\r\n");
             ethernet2wifi_mac_status_set(false);
             ethernet_is_connected = false;
+#if 1 // MZ
+	   esp_wifi_stop();
+#endif
             break;
 
         default:
