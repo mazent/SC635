@@ -34,6 +34,8 @@
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
 #endif
 
+#include "mobd.h"
+
 static const char* TAG = "eth2wifi_demo";
 
 #define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
@@ -307,7 +309,16 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
 void app_main()
 {
+	esp_log_level_set("*", ESP_LOG_INFO) ;
+	
     ESP_ERROR_CHECK(nvs_flash_init());
+	
+	CHECK_IT( MOBD_beg() ) ;
+	// collego maschio obd a eth
+	MOBD_mobd_eth(true) ;
+	// collego eth al micro
+	MOBD_eth_esp32(true) ;
+	
 	
 	{
 		uint8_t mac[6] = {0} ;
