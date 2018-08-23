@@ -35,6 +35,7 @@
 #endif
 
 #include "mobd.h"
+#include "phy.h"
 
 static const char* TAG = "eth2wifi_demo";
 
@@ -313,6 +314,8 @@ void app_main()
 	
     ESP_ERROR_CHECK(nvs_flash_init());
 	
+	CHECK_IT( PHY_beg() ) ;
+
 	CHECK_IT( MOBD_beg() ) ;
 	// collego maschio obd a eth
 	MOBD_mobd_eth(true) ;

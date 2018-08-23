@@ -3,10 +3,9 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := eth2wifi_demo
+PROJECT_NAME := eth2wifi
 
-#If IOT_SOLUTION_PATH is not defined, use relative path as default value
-IOT_SOLUTION_PATH ?= $(abspath $(shell pwd)/../../)
+EXTRA_COMPONENT_DIRS := $(abspath ../bsp)
 
-include $(IOT_SOLUTION_PATH)/Makefile
 include $(IDF_PATH)/make/project.mk
+
