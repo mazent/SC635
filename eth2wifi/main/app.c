@@ -56,7 +56,6 @@ typedef struct {
     void* eb;
 } tcpip_adapter_eth_input_t;
 
-static bool mac_is_set = false;
 static xQueueHandle eth_queue_handle;
 static bool wifi_is_connected = false;
 static bool ethernet_is_connected = false;
@@ -98,16 +97,6 @@ static void phy_device_power_enable_via_gpio(bool enable)
     }
 }
 #endif
-
-static void ethernet2wifi_mac_status_set(bool status)
-{
-    mac_is_set = status;
-}
-
-static bool ethernet2wifi_mac_status_get(void)
-{
-    return mac_is_set;
-}
 
 static void eth_gpio_config_rmii(void)
 {
@@ -156,22 +145,8 @@ static void eth_task(void* pvParameter)
             	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
             			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), pF->type) ;
 
-#if 0 // MZ
-                if (!ethernet2wifi_mac_status_get()) {
-                    memcpy(eth_mac, (uint8_t*)msg.buffer + 6, sizeof(eth_mac));
-                    ESP_ERROR_CHECK(esp_wifi_start());
-#ifdef CONFIG_ETH_TO_STATION_MODE
-                    esp_wifi_set_mac(WIFI_IF_STA, eth_mac);
-                    esp_wifi_connect();
-#else
-                    esp_wifi_set_mac(WIFI_IF_AP, eth_mac);
-#endif
-                    ethernet2wifi_mac_status_set(true);
-                }
-#endif
-                if (wifi_is_connected) {
+                if (wifi_is_connected)
                     esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
-                }
             }
 
             esp_eth_free_rx_buf(msg.buffer);
@@ -326,18 +301,16 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				esp_eth_get_mac(mac) ;
 				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
 			}
-#if 1 // MZ
+
 			esp_wifi_start();
-#endif
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
             printf("SYSTEM_EVENT_ETH_DISCONNECTED\r\n");
-            ethernet2wifi_mac_status_set(false);
+
             ethernet_is_connected = false;
-#if 1 // MZ
+
             esp_wifi_stop();
-#endif
             break;
 
         default:
