@@ -44,9 +44,12 @@
 #include "mobd.h"
 #include "phy.h"
 
+static const char * TAG = "bridge";
+
+
 static void stampa_registri(void)
 {
-#if 1
+#if 0
     //phy_lan8720_dump_registers() ;
 	uint16_t val ;
 
@@ -78,25 +81,8 @@ static void stampa_registri(void)
     ESP_LOGI(TAG, "           Link Status : %s", val & (1 <<  2) ? "UP" : "down") ;
     ESP_LOGI(TAG, "           Jabber Detect : %s", val & (1 <<  1) ? "SI" : "no") ;
 
-    typedef struct {
-    	uint8_t val[3] ;
-    } OUI ;
-    union {
-    	uint32_t x ;
-    	OUI oui ;
-    } u ;
-    val = esp_eth_smi_read(2) ;
-    ESP_LOGI(TAG, "    PHY1   0x%04X", val) ;
-    u.x = val << 3 ;
-    val = esp_eth_smi_read(3) ;
-    ESP_LOGI(TAG, "    PHY2   0x%04X", val) ;
-    ESP_LOGI(TAG, "           revision %d", val & 0xF) ;
-    val >>= 4 ;
-    ESP_LOGI(TAG, "           model %d", val & 0xF) ;
-    val >>= 4 ;
-    u.x |= val << 19 ;
-    ESP_LOGI(TAG, "           phy %02X:%02X:%02X", u.oui.val[2], u.oui.val[1], u.oui.val[0]) ;
-
+    ESP_LOGI(TAG, "    PHY1   0x%04X", esp_eth_smi_read(2)) ;
+    ESP_LOGI(TAG, "    PHY2   0x%04X", esp_eth_smi_read(3)) ;
     ESP_LOGI(TAG, "    ANAR   0x%04X", esp_eth_smi_read(4));
     ESP_LOGI(TAG, "    ANLPAR 0x%04X", esp_eth_smi_read(5));
     ESP_LOGI(TAG, "    ANER   0x%04X", esp_eth_smi_read(6));
@@ -132,7 +118,6 @@ static void stampa_registri(void)
 #endif
 }
 
-static const char * TAG = "bridge";
 
 #define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
 #define PIN_SMI_MDC   CONFIG_PHY_SMI_MDC_PIN
@@ -147,7 +132,7 @@ typedef struct {
 static xQueueHandle eth_queue_handle;
 static bool wifi_is_connected = false;
 static bool ethernet_is_connected = false;
-static uint8_t eth_mac[6];
+
 
 #ifdef CONFIG_PHY_USE_POWER_PIN
 /* This replaces the default PHY power on/off function with one that
@@ -221,6 +206,22 @@ typedef struct {
 	uint16_t type ;
 } ETH_FRAME ;
 
+static uint16_t gira(uint16_t val)
+{
+	union {
+		uint16_t x ;
+		uint8_t b[2] ;
+	} u ;
+	uint8_t tmp ;
+
+	u.x = val ;
+	tmp = u.b[0] ;
+	u.b[0] = u.b[1] ;
+	u.b[1] = tmp ;
+
+	return u.x ;
+}
+
 static void eth_task(void* pvParameter)
 {
     tcpip_adapter_eth_input_t msg;
@@ -231,7 +232,7 @@ static void eth_task(void* pvParameter)
             	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
 
             	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-            			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), pF->type) ;
+            			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 
                 if (wifi_is_connected)
                     esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
@@ -286,8 +287,6 @@ static void initialise_ethernet(void)
 #endif
     esp_eth_init_internal(&config);
     esp_eth_enable();
-
-    stampa_registri() ;
 }
 
 //static esp_err_t tcpip_adapter_sta_input_eth_output(void* buffer, uint16_t len, void* eb)
@@ -385,6 +384,8 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				uint8_t mac[6] = {0} ;
 				esp_eth_get_mac(mac) ;
 				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
+
+				stampa_registri() ;
 			}
 
 			esp_wifi_start();
