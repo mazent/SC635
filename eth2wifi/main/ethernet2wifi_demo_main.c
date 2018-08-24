@@ -37,7 +37,7 @@
 #include "mobd.h"
 #include "phy.h"
 
-static const char* TAG = "eth2wifi_demo";
+static const char * TAG = "bridge";
 
 #define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
 #define PIN_SMI_MDC   CONFIG_PHY_SMI_MDC_PIN
@@ -131,6 +131,12 @@ static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, 
     return ESP_OK;
 }
 
+typedef struct {
+	uint8_t dst[6] ;
+	uint8_t srg[6] ;
+	uint16_t type ;
+} ETH_FRAME ;
+
 static void eth_task(void* pvParameter)
 {
     tcpip_adapter_eth_input_t msg;
@@ -138,6 +144,11 @@ static void eth_task(void* pvParameter)
     for (;;) {
         if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
             if (msg.len > 0) {
+            	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
+
+            	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %02X",
+            			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), pF->type) ;
+
 #if 0 // MZ
                 if (!ethernet2wifi_mac_status_get()) {
                     memcpy(eth_mac, (uint8_t*)msg.buffer + 6, sizeof(eth_mac));
@@ -295,7 +306,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
 			}
 #if 1 // MZ
-	   esp_wifi_start();
+			esp_wifi_start();
 #endif
             break;
 
@@ -304,7 +315,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
             ethernet2wifi_mac_status_set(false);
             ethernet_is_connected = false;
 #if 1 // MZ
-	   esp_wifi_stop();
+            esp_wifi_stop();
 #endif
             break;
 
