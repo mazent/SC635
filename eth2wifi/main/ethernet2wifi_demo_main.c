@@ -34,6 +34,13 @@
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
 #endif
 
+#ifdef CONFIG_ETH_TO_STATION_MODE
+#	define ESP_IF_WIFI_XXX	ESP_IF_WIFI_STA
+#else
+#	define ESP_IF_WIFI_XXX 	ESP_IF_WIFI_AP
+#endif
+
+
 #include "mobd.h"
 #include "phy.h"
 
@@ -146,7 +153,7 @@ static void eth_task(void* pvParameter)
             if (msg.len > 0) {
             	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
 
-            	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %02X",
+            	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
             			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), pF->type) ;
 
 #if 0 // MZ
@@ -163,11 +170,7 @@ static void eth_task(void* pvParameter)
                 }
 #endif
                 if (wifi_is_connected) {
-#ifdef CONFIG_ETH_TO_STATION_MODE
-                    esp_wifi_internal_tx(ESP_IF_WIFI_STA, msg.buffer, msg.len - 4);
-#else
-                    esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.buffer, msg.len - 4);
-#endif
+                    esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
                 }
             }
 
@@ -220,6 +223,24 @@ static void initialise_ethernet(void)
 #endif
     esp_eth_init_internal(&config);
     esp_eth_enable();
+#if 0
+    //phy_lan8720_dump_registers() ;
+    ESP_LOGI(TAG, "LAN8720 Registers:");
+    ESP_LOGI(TAG, "\tBCR    0x%04X", esp_eth_smi_read(0x0));
+    ESP_LOGI(TAG, "\tBSR    0x%04X", esp_eth_smi_read(0x1));
+    ESP_LOGI(TAG, "\tPHY1   0x%04X", esp_eth_smi_read(0x2));
+    ESP_LOGI(TAG, "\tPHY2   0x%04X", esp_eth_smi_read(0x3));
+    ESP_LOGI(TAG, "\tANAR   0x%04X", esp_eth_smi_read(0x4));
+    ESP_LOGI(TAG, "\tANLPAR 0x%04X", esp_eth_smi_read(0x5));
+    ESP_LOGI(TAG, "\tANER   0x%04X", esp_eth_smi_read(0x6));
+    ESP_LOGI(TAG, "\tMCSR   0x%04X", esp_eth_smi_read(0x17));
+    ESP_LOGI(TAG, "\tSM     0x%04X", esp_eth_smi_read(0x18));
+    ESP_LOGI(TAG, "\tSECR   0x%04X", esp_eth_smi_read(0x26));
+    ESP_LOGI(TAG, "\tCSIR   0x%04X", esp_eth_smi_read(0x27));
+    ESP_LOGI(TAG, "\tISR    0x%04X", esp_eth_smi_read(0x29));
+    ESP_LOGI(TAG, "\tIMR    0x%04X", esp_eth_smi_read(0x30));
+    ESP_LOGI(TAG, "\tPSCSR  0x%04X", esp_eth_smi_read(0x31));
+#endif
 }
 
 static esp_err_t tcpip_adapter_sta_input_eth_output(void* buffer, uint16_t len, void* eb)
