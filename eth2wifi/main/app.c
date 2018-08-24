@@ -134,6 +134,7 @@ typedef struct {
     void* buffer;
     uint16_t len;
     void* eb;
+    bool eth ;
 } tcpip_adapter_eth_input_t;
 
 static xQueueHandle eth_queue_handle;
@@ -194,15 +195,19 @@ static void eth_gpio_config_rmii(void)
 
 static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
 {
-    tcpip_adapter_eth_input_t msg;
+	if (len > 0) {
+	    tcpip_adapter_eth_input_t msg;
 
-    msg.buffer = buffer;
-    msg.len = len;
-    msg.eb = eb;
+	    msg.buffer = buffer;
+	    msg.len = len;
+	    msg.eb = eb;
+	    msg.eth = true ;
 
-    if (xQueueSend(eth_queue_handle, &msg, portMAX_DELAY) != pdTRUE) {
-        return ESP_FAIL;
-    }
+	    if (xQueueSend(eth_queue_handle, &msg, portMAX_DELAY) != pdTRUE)
+	        return ESP_FAIL;
+	}
+	else
+		esp_eth_free_rx_buf(msg.buffer) ;
 
     return ESP_OK;
 }
@@ -275,6 +280,7 @@ static void initialise_ethernet(void)
     esp_eth_enable();
 }
 
+
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
 #if 0
@@ -283,12 +289,27 @@ static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len,
 	ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
 			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
-
+#if 0
     if (ethernet_is_connected) {
         esp_eth_tx(buffer, len);
     }
 
     esp_wifi_internal_free_rx_buffer(eb);
+#else
+	if (len > 0) {
+	    tcpip_adapter_eth_input_t msg;
+
+	    msg.buffer = buffer;
+	    msg.len = len;
+	    msg.eb = eb;
+	    msg.eth = false ;
+
+	    if (xQueueSend(eth_queue_handle, &msg, portMAX_DELAY) != pdTRUE)
+	        return ESP_FAIL;
+	}
+	else
+		esp_wifi_internal_free_rx_buffer(eb);
+#endif
     return ESP_OK;
 }
 
@@ -412,20 +433,32 @@ void app_main()
     // Bridge
     tcpip_adapter_eth_input_t msg;
 
-    for (;;) {
-        if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
-            if (msg.len > 0) {
+    while (true) {
+    	if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
+    		if (msg.eth) {
 #if 0
-            	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
+    			ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
 
-            	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-            			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+    			ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+    					msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
-                if (wifi_is_connected)
-                    esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
-            }
+    			if (wifi_is_connected)
+    				esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
 
-            esp_eth_free_rx_buf(msg.buffer);
-        }
+    			esp_eth_free_rx_buf(msg.buffer);
+    		}
+    		else {
+#if 0
+    			ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
+
+				ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+						len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+#endif
+    		    if (ethernet_is_connected)
+    		        esp_eth_tx(msg.buffer, msg.len);
+
+    		    esp_wifi_internal_free_rx_buffer(msg.eb) ;
+    		}
+    	}
     }
 }
