@@ -44,6 +44,94 @@
 #include "mobd.h"
 #include "phy.h"
 
+static void stampa_registri(void)
+{
+#if 1
+    //phy_lan8720_dump_registers() ;
+	uint16_t val ;
+
+    ESP_LOGI(TAG, "LAN8720 Registers:");
+
+    val = esp_eth_smi_read(0) ;
+    ESP_LOGI(TAG, "    BCR    0x%04X", val);
+    ESP_LOGI(TAG, "           %s", val & (1 << 14) ? "loopback" : "normal");
+    if (val & (1 << 12))
+    	ESP_LOGI(TAG, "           auto-negotiate");
+    else {
+    	ESP_LOGI(TAG, "           %s", val & (1 << 13) ? "100Mbps" : "10Mbps");
+    	ESP_LOGI(TAG, "           %s", val & (1 << 8) ? "full duplex" : "half duplex");
+    }
+    ESP_LOGI(TAG, "           %s", val & (1 << 10) ? "electrical isolation of PHY from the RMII" : "NO electrical isolation of PHY from the RMII");
+
+    val = esp_eth_smi_read(1) ;
+    ESP_LOGI(TAG, "    BSR    0x%04X", val) ;
+    ESP_LOGI(TAG, "           T4 able: %s", val & (1 << 15) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           100BASE-TX Full Duplex: %s", val & (1 << 14) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           100BASE-TX Half Duplex: %s", val & (1 << 13) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           10BASE-T Full Duplex : %s", val & (1 << 12) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           10BASE-T Half Duplex : %s", val & (1 << 11) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           100BASE-T2 Full Duplex : %s", val & (1 << 10) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           100BASE-T2 Half Duplex : %s", val & (1 <<  9) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           Auto-Negotiate Complete : %s", val & (1 <<  5) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           Remote Fault : %s", val & (1 <<  4) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           Auto-Negotiate Ability : %s", val & (1 <<  3) ? "SI" : "no") ;
+    ESP_LOGI(TAG, "           Link Status : %s", val & (1 <<  2) ? "UP" : "down") ;
+    ESP_LOGI(TAG, "           Jabber Detect : %s", val & (1 <<  1) ? "SI" : "no") ;
+
+    typedef struct {
+    	uint8_t val[3] ;
+    } OUI ;
+    union {
+    	uint32_t x ;
+    	OUI oui ;
+    } u ;
+    val = esp_eth_smi_read(2) ;
+    ESP_LOGI(TAG, "    PHY1   0x%04X", val) ;
+    u.x = val << 3 ;
+    val = esp_eth_smi_read(3) ;
+    ESP_LOGI(TAG, "    PHY2   0x%04X", val) ;
+    ESP_LOGI(TAG, "           revision %d", val & 0xF) ;
+    val >>= 4 ;
+    ESP_LOGI(TAG, "           model %d", val & 0xF) ;
+    val >>= 4 ;
+    u.x |= val << 19 ;
+    ESP_LOGI(TAG, "           phy %02X:%02X:%02X", u.oui.val[2], u.oui.val[1], u.oui.val[0]) ;
+
+    ESP_LOGI(TAG, "    ANAR   0x%04X", esp_eth_smi_read(4));
+    ESP_LOGI(TAG, "    ANLPAR 0x%04X", esp_eth_smi_read(5));
+    ESP_LOGI(TAG, "    ANER   0x%04X", esp_eth_smi_read(6));
+    ESP_LOGI(TAG, "    MCSR   0x%04X", esp_eth_smi_read(17));
+    ESP_LOGI(TAG, "    SM     0x%04X", esp_eth_smi_read(18));
+    ESP_LOGI(TAG, "    SECR   0x%04X", esp_eth_smi_read(26));
+    ESP_LOGI(TAG, "    CSIR   0x%04X", esp_eth_smi_read(27));
+    ESP_LOGI(TAG, "    ISR    0x%04X", esp_eth_smi_read(29));
+    ESP_LOGI(TAG, "    IMR    0x%04X", esp_eth_smi_read(30));
+
+    val = esp_eth_smi_read(31) ;
+    ESP_LOGI(TAG, "    PSCSR  0x%04X", val);
+    ESP_LOGI(TAG, "           %s", val & (1 << 12) ? "Auto-negotiation is done" : "Auto-negotiation is not done or disabled (or not active)") ;
+    val >>= 2 ;
+    val &= 0x7 ;
+    switch (val) {
+    case 1:
+    	ESP_LOGI(TAG, "           10BASE-T half-duplex") ;
+    	break ;
+    case 5:
+    	ESP_LOGI(TAG, "           10BASE-T full-duplex") ;
+    	break ;
+    case 2:
+    	ESP_LOGI(TAG, "           100BASE-TX half-duplex") ;
+    	break ;
+    case 6:
+    	ESP_LOGI(TAG, "           100BASE-TX full-duplex") ;
+    	break ;
+    default:
+    	ESP_LOGE(TAG, "           ? %02X ?", val) ;
+    	break ;
+    }
+#endif
+}
+
 static const char * TAG = "bridge";
 
 #define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
@@ -198,27 +286,31 @@ static void initialise_ethernet(void)
 #endif
     esp_eth_init_internal(&config);
     esp_eth_enable();
-#if 0
-    //phy_lan8720_dump_registers() ;
-    ESP_LOGI(TAG, "LAN8720 Registers:");
-    ESP_LOGI(TAG, "\tBCR    0x%04X", esp_eth_smi_read(0x0));
-    ESP_LOGI(TAG, "\tBSR    0x%04X", esp_eth_smi_read(0x1));
-    ESP_LOGI(TAG, "\tPHY1   0x%04X", esp_eth_smi_read(0x2));
-    ESP_LOGI(TAG, "\tPHY2   0x%04X", esp_eth_smi_read(0x3));
-    ESP_LOGI(TAG, "\tANAR   0x%04X", esp_eth_smi_read(0x4));
-    ESP_LOGI(TAG, "\tANLPAR 0x%04X", esp_eth_smi_read(0x5));
-    ESP_LOGI(TAG, "\tANER   0x%04X", esp_eth_smi_read(0x6));
-    ESP_LOGI(TAG, "\tMCSR   0x%04X", esp_eth_smi_read(0x17));
-    ESP_LOGI(TAG, "\tSM     0x%04X", esp_eth_smi_read(0x18));
-    ESP_LOGI(TAG, "\tSECR   0x%04X", esp_eth_smi_read(0x26));
-    ESP_LOGI(TAG, "\tCSIR   0x%04X", esp_eth_smi_read(0x27));
-    ESP_LOGI(TAG, "\tISR    0x%04X", esp_eth_smi_read(0x29));
-    ESP_LOGI(TAG, "\tIMR    0x%04X", esp_eth_smi_read(0x30));
-    ESP_LOGI(TAG, "\tPSCSR  0x%04X", esp_eth_smi_read(0x31));
-#endif
+
+    stampa_registri() ;
 }
 
-static esp_err_t tcpip_adapter_sta_input_eth_output(void* buffer, uint16_t len, void* eb)
+//static esp_err_t tcpip_adapter_sta_input_eth_output(void* buffer, uint16_t len, void* eb)
+//{
+//    if (ethernet_is_connected) {
+//        esp_eth_tx(buffer, len);
+//    }
+//
+//    esp_wifi_internal_free_rx_buffer(eb);
+//    return ESP_OK;
+//}
+//
+//static esp_err_t tcpip_adapter_ap_input_eth_output(void* buffer, uint16_t len, void* eb)
+//{
+//    if (ethernet_is_connected) {
+//        esp_eth_tx(buffer, len);
+//    }
+//
+//    esp_wifi_internal_free_rx_buffer(eb);
+//    return ESP_OK;
+//}
+
+static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
     if (ethernet_is_connected) {
         esp_eth_tx(buffer, len);
@@ -228,15 +320,6 @@ static esp_err_t tcpip_adapter_sta_input_eth_output(void* buffer, uint16_t len, 
     return ESP_OK;
 }
 
-static esp_err_t tcpip_adapter_ap_input_eth_output(void* buffer, uint16_t len, void* eb)
-{
-    if (ethernet_is_connected) {
-        esp_eth_tx(buffer, len);
-    }
-
-    esp_wifi_internal_free_rx_buffer(eb);
-    return ESP_OK;
-}
 
 static esp_err_t event_handler(void* ctx, system_event_t* event)
 {
@@ -255,7 +338,8 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				ESP_LOGI(TAG, "STA: "MACSTR"", MAC2STR(mac)) ;
 			}
 
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)tcpip_adapter_sta_input_eth_output);
+            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)tcpip_adapter_sta_input_eth_output);
+			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, tcpip_adapter_wifi_input_eth_output);
             break;
 
         case SYSTEM_EVENT_STA_GOT_IP:
@@ -263,7 +347,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
             break;
 
         case SYSTEM_EVENT_STA_DISCONNECTED:
-            printf("SlYSTEM_EVENT_STA_DISCONNECTED\r\n");
+            printf("SYSTEM_EVENT_STA_DISCONNECTED\r\n");
             wifi_is_connected = false;
             esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
             esp_wifi_connect();
@@ -273,7 +357,8 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
             printf("SYSTEM_EVENT_AP_STACONNECTED\r\n");
             wifi_is_connected = true;
 
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
+            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
+            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
             break;
 			
 		case SYSTEM_EVENT_AP_START:                 
