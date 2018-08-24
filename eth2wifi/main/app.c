@@ -193,24 +193,6 @@ static void eth_gpio_config_rmii(void)
     phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
 }
 
-static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
-{
-	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg;
-
-	    msg.buffer = buffer;
-	    msg.len = len;
-	    msg.eb = eb;
-	    msg.eth = true ;
-
-	    if (xQueueSend(eth_queue_handle, &msg, portMAX_DELAY) != pdTRUE)
-	        return ESP_FAIL;
-	}
-	else
-		esp_eth_free_rx_buf(msg.buffer) ;
-
-    return ESP_OK;
-}
 
 typedef struct {
 	uint8_t dst[6] ;
@@ -232,6 +214,73 @@ static uint16_t gira(uint16_t val)
 	u.b[1] = tmp ;
 
 	return u.x ;
+}
+
+
+static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
+{
+	if (len > 0) {
+	    tcpip_adapter_eth_input_t msg;
+
+	    msg.buffer = malloc(len);
+	    if (msg.buffer) {
+	    	memcpy(msg.buffer, buffer, len) ;
+
+		    msg.len = len;
+		    msg.eb = eb;
+		    msg.eth = true ;
+
+		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
+		    	ESP_LOGE(TAG, "eth non inviato!!!") ;
+		    	free(msg.buffer) ;
+		    }
+
+	    }
+	    else
+	    	ESP_LOGE(TAG, "eth malloc!!!") ;
+	}
+
+	esp_eth_free_rx_buf(buffer) ;
+
+    return ESP_OK;
+}
+
+static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
+{
+#if 0
+	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
+
+	ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+#endif
+#if 0
+    if (ethernet_is_connected) {
+        esp_eth_tx(buffer, len);
+    }
+
+    esp_wifi_internal_free_rx_buffer(eb);
+#else
+	if (len > 0) {
+	    tcpip_adapter_eth_input_t msg;
+
+	    msg.buffer = malloc(len);
+	    if (msg.buffer) {
+	    	memcpy(msg.buffer, buffer, len) ;
+
+		    msg.len = len;
+		    msg.eb = eb;
+		    msg.eth = false ;
+
+		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
+		    	ESP_LOGE(TAG, "wifi non inviato!!!") ;
+		    	free(msg.buffer) ;
+		    }
+	    }
+	}
+
+	esp_wifi_internal_free_rx_buffer(eb);
+#endif
+    return ESP_OK;
 }
 
 static void initialise_wifi(void)
@@ -265,7 +314,7 @@ static void initialise_wifi(void)
 static void initialise_ethernet(void)
 {
     eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
-    
+
     /* Set the PHY address in the example configuration */
     config.phy_addr = CONFIG_PHY_ADDRESS;
     config.gpio_config = eth_gpio_config_rmii;
@@ -279,40 +328,6 @@ static void initialise_ethernet(void)
     esp_eth_init_internal(&config);
     esp_eth_enable();
 }
-
-
-static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
-{
-#if 0
-	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
-
-	ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
-#if 0
-    if (ethernet_is_connected) {
-        esp_eth_tx(buffer, len);
-    }
-
-    esp_wifi_internal_free_rx_buffer(eb);
-#else
-	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg;
-
-	    msg.buffer = buffer;
-	    msg.len = len;
-	    msg.eb = eb;
-	    msg.eth = false ;
-
-	    if (xQueueSend(eth_queue_handle, &msg, portMAX_DELAY) != pdTRUE)
-	        return ESP_FAIL;
-	}
-	else
-		esp_wifi_internal_free_rx_buffer(eb);
-#endif
-    return ESP_OK;
-}
-
 
 static esp_err_t event_handler(void* ctx, system_event_t* event)
 {
@@ -422,7 +437,7 @@ void app_main()
 
 	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
 	}
-    eth_queue_handle = xQueueCreate(CONFIG_DMA_RX_BUF_NUM, sizeof(tcpip_adapter_eth_input_t));
+    eth_queue_handle = xQueueCreate(100, sizeof(tcpip_adapter_eth_input_t));
 
     esp_event_loop_init(event_handler, NULL);
 
@@ -445,7 +460,8 @@ void app_main()
     			if (wifi_is_connected)
     				esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
 
-    			esp_eth_free_rx_buf(msg.buffer);
+    			//esp_eth_free_rx_buf(msg.buffer);
+
     		}
     		else {
 #if 0
@@ -457,8 +473,9 @@ void app_main()
     		    if (ethernet_is_connected)
     		        esp_eth_tx(msg.buffer, msg.len);
 
-    		    esp_wifi_internal_free_rx_buffer(msg.eb) ;
+    		    //esp_wifi_internal_free_rx_buffer(msg.eb) ;
     		}
+    		free(msg.buffer) ;
     	}
     }
 }
