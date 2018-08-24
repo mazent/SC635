@@ -46,6 +46,13 @@
 
 static const char * TAG = "bridge";
 
+//typedef struct {
+//    void * buffer;
+//    uint16_t len;
+//    void * eb;
+//} PKT ;
+//
+//osMailQDef(pkt, 10, PKT) ;
 
 static void stampa_registri(void)
 {
@@ -222,6 +229,7 @@ static uint16_t gira(uint16_t val)
 	return u.x ;
 }
 
+#if 0
 static void eth_task(void* pvParameter)
 {
     tcpip_adapter_eth_input_t msg;
@@ -242,6 +250,7 @@ static void eth_task(void* pvParameter)
         }
     }
 }
+#endif
 
 static void initialise_wifi(void)
 {
@@ -428,13 +437,31 @@ void app_main()
 
 	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
 	}
-    
     eth_queue_handle = xQueueCreate(CONFIG_DMA_RX_BUF_NUM, sizeof(tcpip_adapter_eth_input_t));
+#if 0
     xTaskCreate(eth_task, "eth_task", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL);
-    
+#endif
     esp_event_loop_init(event_handler, NULL);
 
     initialise_ethernet();
 
     initialise_wifi();
+
+    tcpip_adapter_eth_input_t msg;
+
+    for (;;) {
+        if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
+            if (msg.len > 0) {
+            	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
+
+            	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+            			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+
+                if (wifi_is_connected)
+                    esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
+            }
+
+            esp_eth_free_rx_buf(msg.buffer);
+        }
+    }
 }
