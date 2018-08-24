@@ -277,7 +277,7 @@ static void initialise_ethernet(void)
 
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
-#if 1
+#if 0
 	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
 
 	ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
