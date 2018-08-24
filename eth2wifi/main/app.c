@@ -277,6 +277,13 @@ static void initialise_ethernet(void)
 
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
+#if 1
+	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
+
+	ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+#endif
+
     if (ethernet_is_connected) {
         esp_eth_tx(buffer, len);
     }
@@ -408,8 +415,9 @@ void app_main()
     for (;;) {
         if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
             if (msg.len > 0) {
-            	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
 #if 0
+            	ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
+
             	ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
             			msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
