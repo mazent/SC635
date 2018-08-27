@@ -125,14 +125,17 @@ static void stampa_registri(void)
 static bool wifi_is_connected = false;
 static bool ethernet_is_connected = false;
 
+#define DIM_PKT		1600
+#define NUM_PKT		30
+
 typedef struct {
-    uint8_t msg[1600] ;
+    uint8_t msg[DIM_PKT] ;
     uint16_t len;
 
     bool eth ;
 } UN_PKT ;
 
-osMailQDef(pkt, 30, UN_PKT) ;
+osMailQDef(pkt, NUM_PKT, UN_PKT) ;
 static osMailQId pkt ;
 
 
@@ -214,6 +217,7 @@ static uint16_t gira(uint16_t val)
 static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
+		assert(len < DIM_PKT) ;
 		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
 		if (pP) {
 			pP->eth = true ;
@@ -238,6 +242,7 @@ static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, 
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
+		assert(len < DIM_PKT) ;
 		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
 		if (pP) {
 			pP->eth = false ;
