@@ -133,7 +133,7 @@ static void stampa_registri(void)
 typedef struct {
     void* buffer;
     uint16_t len;
-    void* eb;
+
     bool eth ;
 } tcpip_adapter_eth_input_t;
 
@@ -220,25 +220,25 @@ static uint16_t gira(uint16_t val)
 static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg;
+	    tcpip_adapter_eth_input_t msg = {
+			.len = len,
+			.eth = true
+	    } ;
 
 	    msg.buffer = malloc(len);
 	    if (msg.buffer) {
 	    	memcpy(msg.buffer, buffer, len) ;
 
-		    msg.len = len;
-		    msg.eb = eb;
-		    msg.eth = true ;
-
 		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
 		    	ESP_LOGE(TAG, "eth non inviato!!!") ;
 		    	free(msg.buffer) ;
 		    }
-
 	    }
 	    else
 	    	ESP_LOGE(TAG, "eth malloc!!!") ;
 	}
+	else
+		ESP_LOGE(TAG, "eth len %d", len) ;
 
 	esp_eth_free_rx_buf(buffer) ;
 
@@ -247,29 +247,15 @@ static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, 
 
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
-#if 0
-	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
-
-	ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
-#if 0
-    if (ethernet_is_connected) {
-        esp_eth_tx(buffer, len);
-    }
-
-    esp_wifi_internal_free_rx_buffer(eb);
-#else
 	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg;
+	    tcpip_adapter_eth_input_t msg = {
+			.len = len,
+			.eth = false
+	    };
 
 	    msg.buffer = malloc(len);
 	    if (msg.buffer) {
 	    	memcpy(msg.buffer, buffer, len) ;
-
-		    msg.len = len;
-		    msg.eb = eb;
-		    msg.eth = false ;
 
 		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
 		    	ESP_LOGE(TAG, "wifi non inviato!!!") ;
@@ -277,9 +263,11 @@ static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len,
 		    }
 	    }
 	}
+	else
+		ESP_LOGE(TAG, "wifi len %d", len) ;
 
 	esp_wifi_internal_free_rx_buffer(eb);
-#endif
+
     return ESP_OK;
 }
 
@@ -309,6 +297,7 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
 #endif
+    esp_wifi_start() ;
 }
 
 static void initialise_ethernet(void)
@@ -346,7 +335,6 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				ESP_LOGI(TAG, "STA: "MACSTR"", MAC2STR(mac)) ;
 			}
 
-            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, (wifi_rxcb_t)tcpip_adapter_sta_input_eth_output);
 			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, tcpip_adapter_wifi_input_eth_output);
             break;
 
@@ -365,7 +353,6 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
             printf("SYSTEM_EVENT_AP_STACONNECTED\r\n");
             wifi_is_connected = true;
 
-            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
             esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
             break;
 			
@@ -379,7 +366,6 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 			}
 			break ;
 			
-
         case SYSTEM_EVENT_AP_STADISCONNECTED:
             printf("SYSTEM_EVENT_AP_STADISCONNECTED\r\n");
             wifi_is_connected = false;
@@ -397,7 +383,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 				stampa_registri() ;
 			}
 
-			esp_wifi_start();
+//			esp_wifi_start();
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
@@ -405,7 +391,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
             ethernet_is_connected = false;
 
-            esp_wifi_stop();
+//            esp_wifi_stop();
             break;
 
         default:
@@ -459,9 +445,6 @@ void app_main()
 #endif
     			if (wifi_is_connected)
     				esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
-
-    			//esp_eth_free_rx_buf(msg.buffer);
-
     		}
     		else {
 #if 0
@@ -472,9 +455,8 @@ void app_main()
 #endif
     		    if (ethernet_is_connected)
     		        esp_eth_tx(msg.buffer, msg.len);
-
-    		    //esp_wifi_internal_free_rx_buffer(msg.eb) ;
     		}
+
     		free(msg.buffer) ;
     	}
     }
