@@ -122,14 +122,6 @@ static void stampa_registri(void)
 #define PIN_SMI_MDC   CONFIG_PHY_SMI_MDC_PIN
 #define PIN_SMI_MDIO  CONFIG_PHY_SMI_MDIO_PIN
 
-//typedef struct {
-//    void* buffer;
-//    uint16_t len;
-//
-//    bool eth ;
-//} tcpip_adapter_eth_input_t;
-//
-//static xQueueHandle eth_queue_handle;
 static bool wifi_is_connected = false;
 static bool ethernet_is_connected = false;
 
@@ -232,20 +224,6 @@ static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, 
 				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
 			}
 		}
-//	    tcpip_adapter_eth_input_t msg = {
-//			.len = len,
-//			.eth = true
-//	    } ;
-//
-//	    msg.buffer = malloc(len);
-//	    if (msg.buffer) {
-//	    	memcpy(msg.buffer, buffer, len) ;
-//
-//		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
-//		    	ESP_LOGE(TAG, "eth non inviato!!!") ;
-//		    	free(msg.buffer) ;
-//		    }
-//	    }
 	    else
 	    	ESP_LOGE(TAG, "eth malloc!!!") ;
 	}
@@ -270,20 +248,6 @@ static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len,
 				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
 			}
 		}
-//	    tcpip_adapter_eth_input_t msg = {
-//			.len = len,
-//			.eth = false
-//	    };
-//
-//	    msg.buffer = malloc(len);
-//	    if (msg.buffer) {
-//	    	memcpy(msg.buffer, buffer, len) ;
-//
-//		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
-//		    	ESP_LOGE(TAG, "wifi non inviato!!!") ;
-//		    	free(msg.buffer) ;
-//		    }
-//	    }
 	    else
 	    	ESP_LOGE(TAG, "wifi malloc!!!") ;
 	}
@@ -406,16 +370,12 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
 				stampa_registri() ;
 			}
-
-//			esp_wifi_start();
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
             printf("SYSTEM_EVENT_ETH_DISCONNECTED\r\n");
 
             ethernet_is_connected = false;
-
-//            esp_wifi_stop();
             break;
 
         default:
@@ -447,7 +407,7 @@ void app_main()
 
 	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
 	}
-//    eth_queue_handle = xQueueCreate(100, sizeof(tcpip_adapter_eth_input_t));
+
 	pkt = osMailCreate(osMailQ(pkt), NULL) ;
 
     esp_event_loop_init(event_handler, NULL);
@@ -457,7 +417,6 @@ void app_main()
     initialise_wifi();
 
     // Bridge
-    //tcpip_adapter_eth_input_t msg;
 
     while (true) {
     	osEvent evn = osMailGet(pkt, osWaitForever) ;
@@ -486,30 +445,5 @@ void app_main()
 		}
 
     	CHECK_IT(osOK == osMailFree(pkt, evn.value.p)) ;
-
-//    	if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
-//    		if (msg.eth) {
-//#if 0
-//    			ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
-//
-//    			ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-//    					msg.len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-//#endif
-//    			if (wifi_is_connected)
-//    				esp_wifi_internal_tx(ESP_IF_WIFI_XXX, msg.buffer, msg.len - 4);
-//    		}
-//    		else {
-//#if 0
-//    			ETH_FRAME * pF = (ETH_FRAME *) msg.buffer ;
-//
-//				ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-//						len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-//#endif
-//    		    if (ethernet_is_connected)
-//    		        esp_eth_tx(msg.buffer, msg.len);
-//    		}
-//
-//    		free(msg.buffer) ;
-//    	}
     }
 }
