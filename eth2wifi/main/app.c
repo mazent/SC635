@@ -140,7 +140,7 @@ typedef struct {
     bool eth ;
 } UN_PKT ;
 
-osMailQDef(pkt, 20, UN_PKT) ;
+osMailQDef(pkt, 30, UN_PKT) ;
 static osMailQId pkt ;
 
 
@@ -457,7 +457,7 @@ void app_main()
     initialise_wifi();
 
     // Bridge
-    tcpip_adapter_eth_input_t msg;
+    //tcpip_adapter_eth_input_t msg;
 
     while (true) {
     	osEvent evn = osMailGet(pkt, osWaitForever) ;
