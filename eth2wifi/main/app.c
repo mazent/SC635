@@ -44,6 +44,15 @@
 #include "mobd.h"
 #include "phy.h"
 
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
+#include "lwip/snmp.h"
+#include "netif/etharp.h"
+#include "lwip/ethip6.h"
+#include "lwip/dhcp.h"
+//#include "lwip/autoip.h"
+
+
 static const char * TAG = "bridge";
 
 static void stampa_registri(void)
@@ -138,7 +147,8 @@ typedef struct {
 
     enum {
     	DA_ETH,
-    	DA_WIFI
+    	DA_WIFI,
+		DA_BR
     } tipo ;
 } UN_PKT ;
 
@@ -401,6 +411,71 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
 static struct netif br ;
 
+static void br_input(void *buffer, uint16_t len)
+{
+	struct pbuf *p;
+
+#if 0
+	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
+
+	ESP_LOGI(TAG, "BR in [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+#endif
+
+//	if(buffer== NULL || !netif_is_up(&br))
+//		return;
+
+#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
+	if (p == NULL) {
+		return;
+	}
+	p->l2_owner = NULL;
+	memcpy(p->payload, buffer, len);
+
+	/* full packet send to tcpip_thread to process */
+	if (br->input(p, &br) != ERR_OK) {
+		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+		pbuf_free(p);
+	}
+
+#else
+	p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+	if (p == NULL)
+		return;
+
+	p->payload = buffer;
+	p->l2_owner = &br;
+	p->l2_buf = buffer;
+
+	/* full packet send to tcpip_thread to process */
+	if (br.input(p, &br) != ERR_OK) {
+		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+		p->l2_owner = NULL;
+		pbuf_free(p);
+	}
+#endif
+}
+
+static err_t br_output(struct netif *netif, struct pbuf *p)
+{
+#if 1
+	ETH_FRAME * pF = (ETH_FRAME *) p->payload ;
+
+	ESP_LOGI(TAG, "BR out [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+			p->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+#endif
+
+	if (wifi_is_connected)
+		esp_wifi_internal_tx(ESP_IF_WIFI_XXX, p->payload, p->len - 4) ;
+
+	if (ethernet_is_connected)
+		esp_eth_tx(p->payload, p->len) ;
+
+	return ERR_OK;
+}
+
+
 static err_t br_if_init(struct netif *netif)
 {
 //#if LWIP_NETIF_HOSTNAME
@@ -445,91 +520,93 @@ static err_t br_if_init(struct netif *netif)
 
 	/* device capabilities */
 	/* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
-	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
+	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP ;
 
 	return ERR_OK;
 }
 
+int x = 0 ;
+
 static void status_callback(struct netif *netif)
 {
-	ESP_LOGI(TAG, "status_callback(%p) %p", netif, &br) ;
+	if (netif->ip_addr.u_addr.ip4.addr != ip_addr_any.u_addr.ip4.addr) {
+
+		ESP_LOGI(TAG, "BR status_callback %08X (%08X) %08X %08X",
+				netif->ip_addr.u_addr.ip4.addr,	ip_addr_any.u_addr.ip4.addr,
+				netif->netmask.u_addr.ip4.addr,
+				netif->gw.u_addr.ip4.addr) ;
+	}
+
+	if (!ip_addr_cmp(&netif->ip_addr, &ip_addr_any)) {
+		if (x)
+			return ;
+//		char ip[20], msk[20], gw[20] ;
+//
+//		strcpy(ip, ipaddr_ntoa(&netif->ip_addr)) ;
+//		strcpy(msk, ipaddr_ntoa(&netif->netmask)) ;
+//		strcpy(gw, ipaddr_ntoa(&netif->gw)) ;
+//
+//		ESP_LOGI(TAG, "BR status_callback %s %s %s", ip, msk, gw) ;
+
+
+		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
+		if (pP) {
+			ip_addr_t * pi = (ip_addr_t *) pP->msg ;
+			pP->tipo = DA_BR ;
+
+			*pi = netif->ip_addr ;
+			++pi ;
+			*pi = netif->netmask ;
+			++pi ;
+			*pi = netif->gw ;
+			//memcpy(pP->msg, &netif->ip_addr, sizeof(ip_addr_t)) ;
+			if (osOK != osMailPut(pkt, pP)) {
+				ESP_LOGE(TAG, "br status_callback non inviato!!!") ;
+				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
+			}
+			else
+				x = 1 ;
+		}
+	    else
+	    	ESP_LOGE(TAG, "br status_callback malloc!!!") ;
+	}
+	else
+		ESP_LOGI(TAG, "BR status_callback") ;
 }
 
 static void link_callback(struct netif *netif)
 {
-	ESP_LOGI(TAG, "link_callback(%p) %p", netif, &br) ;
+//	if (!ip_addr_cmp(&netif->ip_addr, &ip_addr_any))
+//		ESP_LOGI(TAG, "BR link_callback %s", ipaddr_ntoa(&netif->ip_addr)) ;
+//	else
+		ESP_LOGI(TAG, "BR link_callback") ;
 }
 
 static void br_iniz(void)
 {
-	struct ip_addr ip = { 0 } ;
-	struct ip_addr msk = { 0 } ;
-	struct ip_addr gw = { 0 } ;
+//	ip4_addr_t msk = { 0 } ;
+//	ip4_addr_t gw = { 0 } ;
 
-	netif_add(&br, &ip, &msk, &gw, NULL, br_if_init, tcpip_input) ;
+	tcpip_init(NULL, NULL);
+
+//	netif_add(&br, &ip, &msk, &gw, NULL, br_if_init, tcpip_input) ;
+	netif_add(&br, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, NULL, br_if_init, tcpip_input) ;
+
 #if LWIP_NETIF_LINK_CALLBACK
-	netif_set_link_callback(&br, netif_status_callback_fn link_callback) ;
+	netif_set_link_callback(&br, link_callback) ;
 #endif
 #if LWIP_NETIF_STATUS_CALLBACK
-	netif_set_status_callback(&br, netif_status_callback_fn status_callback);
+	netif_set_status_callback(&br, status_callback);
 #endif
 	netif_set_up(&br) ;
-	//netif_set_link_up(&br);
+	netif_set_link_up(&br);
+	dhcp_start(&br) ;
+	//autoip_start(&br) ;
 }
 
 static void br_fine(void)
 {
 	netif_set_down(&br) ;
-}
-
-static void br_input(void *buffer, uint16_t len)
-{
-	struct pbuf *p;
-
-	if(buffer== NULL || !netif_is_up(&br))
-		return;
-
-#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
-	if (p == NULL) {
-		return;
-	}
-	p->l2_owner = NULL;
-	memcpy(p->payload, buffer, len);
-
-	/* full packet send to tcpip_thread to process */
-	if (br->input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-		pbuf_free(p);
-	}
-
-#else
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
-	if (p == NULL)
-		return;
-
-	p->payload = buffer;
-	p->l2_owner = &br;
-	p->l2_buf = buffer;
-
-	/* full packet send to tcpip_thread to process */
-	if (br->input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-		p->l2_owner = NULL;
-		pbuf_free(p);
-	}
-#endif
-}
-
-static err_t br_output(struct netif *netif, struct pbuf *p)
-{
-	if (wifi_is_connected)
-		esp_wifi_internal_tx(ESP_IF_WIFI_XXX, p->payload, p->len - 4) ;
-
-	if (ethernet_is_connected)
-		esp_eth_tx(p->payload, p->len) ;
-
-	return ERR_OK;
 }
 
 
@@ -564,6 +641,8 @@ void app_main()
 
     initialise_wifi();
 
+    br_iniz() ;
+
     // Bridge
 
     while (true) {
@@ -572,6 +651,20 @@ void app_main()
 
     	UN_PKT * pP = evn.value.p ;
     	switch (pP->tipo) {
+    	case DA_BR: {
+    			ip_addr_t * ip = (ip_addr_t *) pP->msg ;
+    			ip_addr_t * msk = ip + 1 ;
+    			ip_addr_t * gw = ip + 2 ;
+
+        		ESP_LOGI(TAG, "BR indirizzo %s", ipaddr_ntoa(&br.ip_addr)) ;
+        		dhcp_stop(&br) ;
+        		ESP_LOGI(TAG, "BR indirizzo dopo stop %s", ipaddr_ntoa(&br.ip_addr)) ;
+        		//memcpy(pP->msg, netif->ip_addr, sizeof(ip_addr_t)) ;
+        		ESP_LOGI(TAG, "BR imposto %s", ipaddr_ntoa(ip)) ;
+        		netif_set_addr(&br, &ip->u_addr.ip4, &msk->u_addr.ip4, &gw->u_addr.ip4) ;
+        		ESP_LOGI(TAG, "BR indirizzo dopo set %s", ipaddr_ntoa(&br.ip_addr)) ;
+    		}
+    		break ;
     	case DA_ETH: {
 #if 0
 				ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
