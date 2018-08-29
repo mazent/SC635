@@ -506,13 +506,18 @@ static err_t br_if_init(struct netif *netif)
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
 	/* set MAC hardware address */
+#if 0
 	netif->hwaddr[0] = 0xAA ;
 	netif->hwaddr[1] = 0xBB ;
 	netif->hwaddr[2] = 0xCC ;
 	netif->hwaddr[3] = 0xDD ;
 	netif->hwaddr[4] = 0xEE ;
 	netif->hwaddr[5] = 0xFF ;
-
+#else
+	esp_efuse_mac_get_default(netif->hwaddr) ;
+	// base + 1 = AP mac
+	++netif->hwaddr[5] ;
+#endif
 	/* maximum transfer unit */
 	netif->mtu = 1500;
 
@@ -522,55 +527,6 @@ static err_t br_if_init(struct netif *netif)
 
 	return ERR_OK;
 }
-
-//int x = 0 ;
-//
-//static void status_callback(struct netif *netif)
-//{
-//	if (netif->ip_addr.u_addr.ip4.addr != ip_addr_any.u_addr.ip4.addr) {
-//
-//		ESP_LOGI(TAG, "BR status_callback %08X (%08X) %08X %08X",
-//				netif->ip_addr.u_addr.ip4.addr,	ip_addr_any.u_addr.ip4.addr,
-//				netif->netmask.u_addr.ip4.addr,
-//				netif->gw.u_addr.ip4.addr) ;
-//	}
-//
-//	if (!ip_addr_cmp(&netif->ip_addr, &ip_addr_any)) {
-//		if (x)
-//			return ;
-////		char ip[20], msk[20], gw[20] ;
-////
-////		strcpy(ip, ipaddr_ntoa(&netif->ip_addr)) ;
-////		strcpy(msk, ipaddr_ntoa(&netif->netmask)) ;
-////		strcpy(gw, ipaddr_ntoa(&netif->gw)) ;
-////
-////		ESP_LOGI(TAG, "BR status_callback %s %s %s", ip, msk, gw) ;
-//
-//
-//		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
-//		if (pP) {
-//			ip_addr_t * pi = (ip_addr_t *) pP->msg ;
-//			pP->tipo = DA_BR ;
-//
-//			*pi = netif->ip_addr ;
-//			++pi ;
-//			*pi = netif->netmask ;
-//			++pi ;
-//			*pi = netif->gw ;
-//			//memcpy(pP->msg, &netif->ip_addr, sizeof(ip_addr_t)) ;
-//			if (osOK != osMailPut(pkt, pP)) {
-//				ESP_LOGE(TAG, "br status_callback non inviato!!!") ;
-//				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
-//			}
-//			else
-//				x = 1 ;
-//		}
-//	    else
-//	    	ESP_LOGE(TAG, "br status_callback malloc!!!") ;
-//	}
-//	else
-//		ESP_LOGI(TAG, "BR status_callback") ;
-//}
 
 static ip_addr_t br_addr ;
 
@@ -634,9 +590,6 @@ static void br_iniz(void)
 	br_addr = ip_addr_any ;
 	netif_add(&br, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, NULL, br_if_init, tcpip_input) ;
 
-//#if LWIP_NETIF_STATUS_CALLBACK
-//	netif_set_status_callback(&br, status_callback);
-//#endif
 	netif_set_up(&br) ;
 	netif_set_link_up(&br);
 
