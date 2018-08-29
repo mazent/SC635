@@ -50,8 +50,6 @@
 #include "netif/etharp.h"
 #include "lwip/ethip6.h"
 #include "lwip/dhcp.h"
-//#include "lwip/autoip.h"
-
 
 static const char * TAG = "bridge";
 
@@ -525,82 +523,125 @@ static err_t br_if_init(struct netif *netif)
 	return ERR_OK;
 }
 
-int x = 0 ;
+//int x = 0 ;
+//
+//static void status_callback(struct netif *netif)
+//{
+//	if (netif->ip_addr.u_addr.ip4.addr != ip_addr_any.u_addr.ip4.addr) {
+//
+//		ESP_LOGI(TAG, "BR status_callback %08X (%08X) %08X %08X",
+//				netif->ip_addr.u_addr.ip4.addr,	ip_addr_any.u_addr.ip4.addr,
+//				netif->netmask.u_addr.ip4.addr,
+//				netif->gw.u_addr.ip4.addr) ;
+//	}
+//
+//	if (!ip_addr_cmp(&netif->ip_addr, &ip_addr_any)) {
+//		if (x)
+//			return ;
+////		char ip[20], msk[20], gw[20] ;
+////
+////		strcpy(ip, ipaddr_ntoa(&netif->ip_addr)) ;
+////		strcpy(msk, ipaddr_ntoa(&netif->netmask)) ;
+////		strcpy(gw, ipaddr_ntoa(&netif->gw)) ;
+////
+////		ESP_LOGI(TAG, "BR status_callback %s %s %s", ip, msk, gw) ;
+//
+//
+//		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
+//		if (pP) {
+//			ip_addr_t * pi = (ip_addr_t *) pP->msg ;
+//			pP->tipo = DA_BR ;
+//
+//			*pi = netif->ip_addr ;
+//			++pi ;
+//			*pi = netif->netmask ;
+//			++pi ;
+//			*pi = netif->gw ;
+//			//memcpy(pP->msg, &netif->ip_addr, sizeof(ip_addr_t)) ;
+//			if (osOK != osMailPut(pkt, pP)) {
+//				ESP_LOGE(TAG, "br status_callback non inviato!!!") ;
+//				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
+//			}
+//			else
+//				x = 1 ;
+//		}
+//	    else
+//	    	ESP_LOGE(TAG, "br status_callback malloc!!!") ;
+//	}
+//	else
+//		ESP_LOGI(TAG, "BR status_callback") ;
+//}
 
-static void status_callback(struct netif *netif)
+static ip_addr_t br_addr ;
+
+static void dhcp_cb(struct netif * nif)
 {
-	if (netif->ip_addr.u_addr.ip4.addr != ip_addr_any.u_addr.ip4.addr) {
+	do {
+		if (ip_addr_cmp(&nif->ip_addr, &ip_addr_any)) {
+			// Non ho ancora un indirizzo
+			ESP_LOGE(TAG, "br dhcp_cb") ;
+			break ;
+		}
 
-		ESP_LOGI(TAG, "BR status_callback %08X (%08X) %08X %08X",
-				netif->ip_addr.u_addr.ip4.addr,	ip_addr_any.u_addr.ip4.addr,
-				netif->netmask.u_addr.ip4.addr,
-				netif->gw.u_addr.ip4.addr) ;
-	}
+		if (ip_addr_cmp(&nif->ip_addr, &br_addr)) {
+			// Stesso di prima
+			ESP_LOGE(TAG, "br dhcp_cb stesso ip") ;
+			break ;
+		}
 
-	if (!ip_addr_cmp(&netif->ip_addr, &ip_addr_any)) {
-		if (x)
-			return ;
-//		char ip[20], msk[20], gw[20] ;
-//
-//		strcpy(ip, ipaddr_ntoa(&netif->ip_addr)) ;
-//		strcpy(msk, ipaddr_ntoa(&netif->netmask)) ;
-//		strcpy(gw, ipaddr_ntoa(&netif->gw)) ;
-//
-//		ESP_LOGI(TAG, "BR status_callback %s %s %s", ip, msk, gw) ;
+		// Nuovo indirizzo!
+		br_addr = nif->ip_addr ;
+#if 1
+		{
+			char ip[20], msk[20], gw[20] ;
 
+			strcpy(ip, ipaddr_ntoa(&nif->ip_addr)) ;
+			strcpy(msk, ipaddr_ntoa(&nif->netmask)) ;
+			strcpy(gw, ipaddr_ntoa(&nif->gw)) ;
 
+			ESP_LOGI(TAG, "BR dhcp_cb %s %s %s", ip, msk, gw) ;
+		}
+#endif
+
+		// Avviso
 		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
 		if (pP) {
 			ip_addr_t * pi = (ip_addr_t *) pP->msg ;
+
 			pP->tipo = DA_BR ;
 
-			*pi = netif->ip_addr ;
+			*pi = nif->ip_addr ;
 			++pi ;
-			*pi = netif->netmask ;
+			*pi = nif->netmask ;
 			++pi ;
-			*pi = netif->gw ;
-			//memcpy(pP->msg, &netif->ip_addr, sizeof(ip_addr_t)) ;
+			*pi = nif->gw ;
+
 			if (osOK != osMailPut(pkt, pP)) {
-				ESP_LOGE(TAG, "br status_callback non inviato!!!") ;
+				ESP_LOGE(TAG, "br dhcp_cb non inviato!!!") ;
 				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
 			}
-			else
-				x = 1 ;
 		}
-	    else
-	    	ESP_LOGE(TAG, "br status_callback malloc!!!") ;
-	}
-	else
-		ESP_LOGI(TAG, "BR status_callback") ;
-}
+		else
+			ESP_LOGE(TAG, "br dhcp_cb malloc!!!") ;
 
-static void link_callback(struct netif *netif)
-{
-//	if (!ip_addr_cmp(&netif->ip_addr, &ip_addr_any))
-//		ESP_LOGI(TAG, "BR link_callback %s", ipaddr_ntoa(&netif->ip_addr)) ;
-//	else
-		ESP_LOGI(TAG, "BR link_callback") ;
+	} while (false) ;
 }
 
 static void br_iniz(void)
 {
-//	ip4_addr_t msk = { 0 } ;
-//	ip4_addr_t gw = { 0 } ;
-
 	tcpip_init(NULL, NULL);
 
-//	netif_add(&br, &ip, &msk, &gw, NULL, br_if_init, tcpip_input) ;
+	br_addr = ip_addr_any ;
 	netif_add(&br, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, NULL, br_if_init, tcpip_input) ;
 
-#if LWIP_NETIF_LINK_CALLBACK
-	netif_set_link_callback(&br, link_callback) ;
-#endif
-#if LWIP_NETIF_STATUS_CALLBACK
-	netif_set_status_callback(&br, status_callback);
-#endif
+//#if LWIP_NETIF_STATUS_CALLBACK
+//	netif_set_status_callback(&br, status_callback);
+//#endif
 	netif_set_up(&br) ;
 	netif_set_link_up(&br);
+
 	dhcp_start(&br) ;
+	dhcp_set_cb(&br, dhcp_cb);
 	//autoip_start(&br) ;
 }
 
@@ -623,8 +664,7 @@ void app_main()
 	MOBD_mobd_eth(true) ;
 	// collego eth al micro
 	MOBD_eth_esp32(true) ;
-	
-	
+
 	{
 		uint8_t mac[6] = {0} ;
 
@@ -657,12 +697,8 @@ void app_main()
     			ip_addr_t * gw = ip + 2 ;
 
         		ESP_LOGI(TAG, "BR indirizzo %s", ipaddr_ntoa(&br.ip_addr)) ;
-        		dhcp_stop(&br) ;
-        		ESP_LOGI(TAG, "BR indirizzo dopo stop %s", ipaddr_ntoa(&br.ip_addr)) ;
-        		//memcpy(pP->msg, netif->ip_addr, sizeof(ip_addr_t)) ;
-        		ESP_LOGI(TAG, "BR imposto %s", ipaddr_ntoa(ip)) ;
-        		netif_set_addr(&br, &ip->u_addr.ip4, &msk->u_addr.ip4, &gw->u_addr.ip4) ;
-        		ESP_LOGI(TAG, "BR indirizzo dopo set %s", ipaddr_ntoa(&br.ip_addr)) ;
+        		// Non devo fermarlo!
+        		//dhcp_stop(&br) ;
     		}
     		break ;
     	case DA_ETH: {
