@@ -457,7 +457,7 @@ static void br_input(void *buffer, uint16_t len)
 
 static err_t br_output(struct netif *netif, struct pbuf *p)
 {
-#if 1
+#if 0
 	ETH_FRAME * pF = (ETH_FRAME *) p->payload ;
 
 	ESP_LOGI(TAG, "BR out [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
@@ -514,6 +514,7 @@ static err_t br_if_init(struct netif *netif)
 	netif->hwaddr[4] = 0xEE ;
 	netif->hwaddr[5] = 0xFF ;
 #else
+	// https://esp-idf.readthedocs.io/en/latest/api-reference/system/system.html#mac-address
 	esp_efuse_mac_get_default(netif->hwaddr) ;
 	// base + 1 = AP mac
 	++netif->hwaddr[5] ;
@@ -603,7 +604,6 @@ static void br_fine(void)
 	netif_set_down(&br) ;
 }
 
-
 void app_main()
 {
 	esp_log_level_set("*", ESP_LOG_INFO) ;
@@ -636,8 +636,6 @@ void app_main()
 
     br_iniz() ;
 
-    // Bridge
-
     while (true) {
     	osEvent evn = osMailGet(pkt, osWaitForever) ;
     	assert(osEventMail == evn.status) ;
@@ -646,8 +644,8 @@ void app_main()
     	switch (pP->tipo) {
     	case DA_BR: {
     			ip_addr_t * ip = (ip_addr_t *) pP->msg ;
-    			ip_addr_t * msk = ip + 1 ;
-    			ip_addr_t * gw = ip + 2 ;
+//    			ip_addr_t * msk = ip + 1 ;
+//    			ip_addr_t * gw = ip + 2 ;
 
         		ESP_LOGI(TAG, "BR indirizzo %s", ipaddr_ntoa(&br.ip_addr)) ;
         		// Non devo fermarlo!
