@@ -19,10 +19,41 @@
 #include "nvs_flash.h"
 #include "eth_phy/phy_lan8720.h"
 #include "esp_eth.h"
+#include "esp_wifi.h"
+#include "esp_wifi_internal.h"
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
+#include "lwip/snmp.h"
+#include "netif/etharp.h"
+#include "lwip/ethip6.h"
+#include "lwip/dhcp.h"
+
 
 extern void esegui(RX_SPC *, TX_SPC *) ;
 
 static const char * TAG = "bridge";
+
+typedef struct {
+	uint8_t dst[6] ;
+	uint8_t srg[6] ;
+	uint16_t type ;
+} ETH_FRAME ;
+
+static uint16_t gira(uint16_t val)
+{
+	union {
+		uint16_t x ;
+		uint8_t b[2] ;
+	} u ;
+	uint8_t tmp ;
+
+	u.x = val ;
+	tmp = u.b[0] ;
+	u.b[0] = u.b[1] ;
+	u.b[1] = tmp ;
+
+	return u.x ;
+}
 
 #ifdef NDEBUG
 const uint32_t VERSIONE = (1 << 24) + VER ;
@@ -75,8 +106,7 @@ static void rid(void)
 typedef struct {
     enum {
     	DA_ETH,
-    	DA_WIFI,
-		DA_BR
+    	DA_WIFI
     } tipo ;
 
     uint16_t len ;
@@ -104,7 +134,7 @@ static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 			pP->tipo = DA_WIFI ;
 			pP->len = len ;
 			memcpy(pP->msg, buffer, len) ;
-			if (osOK != osMessagePut(comes, pP, 0)) {
+			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "wifi non inviato!!!") ;
 				pkt_free(pP) ;
 			}
@@ -211,13 +241,13 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
 //    case SYSTEM_EVENT_GOT_IP6:                  /**< ESP32 station or ap or ethernet interface v6IP addr is preferred */
 //    	ESP_LOGI(TAG, "SYSTEM_EVENT_GOT_IP6");
 //    	break ;
-//    case SYSTEM_EVENT_ETH_START:                /**< ESP32 ethernet start */
-//    	ESP_LOGI(TAG, "SYSTEM_EVENT_ETH_START");
-//    	break ;
-//    case SYSTEM_EVENT_ETH_STOP:                 /**< ESP32 ethernet stop */
-//    	ESP_LOGI(TAG, "SYSTEM_EVENT_ETH_STOP");
-//    	break ;
 
+    case SYSTEM_EVENT_ETH_START:
+    	ESP_LOGI(TAG, "SYSTEM_EVENT_ETH_START");
+    	break ;
+    case SYSTEM_EVENT_ETH_STOP:
+    	ESP_LOGI(TAG, "SYSTEM_EVENT_ETH_STOP");
+    	break ;
     case SYSTEM_EVENT_ETH_CONNECTED:
     	ESP_LOGI(TAG, "SYSTEM_EVENT_ETH_CONNECTED");
         ethernet = true;
@@ -284,7 +314,7 @@ static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 			pP->tipo = DA_ETH ;
 			pP->len = len ;
 			memcpy(pP->msg, buffer, len) ;
-			if (osOK != osMessagePut(comes, pP, 0)) {
+			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "eth non inviato!!!") ;
 				pkt_free(pP) ;
 			}
@@ -315,26 +345,26 @@ static void eth_iniz(void)
 static void ap_iniz(void)
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    char ssid[15] = { 0 } ;
 
     ESP_ERROR_CHECK(esp_wifi_init_internal(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
 
+    wifi_config_t wifi_config = {
+        .ap = {
+            .max_connection = 1,
+            .authmode = WIFI_AUTH_OPEN
+        }
+    } ;
     {
         uint8_t mac[6] = { 0 } ;
+        char * ssid = (char *) wifi_config.ap.ssid ;
+
         esp_efuse_mac_get_default(mac) ;
 
         sprintf(ssid, "SC635_%02X%02X%02X", mac[3], mac[4], mac[5]) ;
+        wifi_config.ap.ssid_len = strlen(ssid) ;
     }
 
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid = ssid,
-            .ssid_len = strlen(ssid),
-            .max_connection = 1,
-            .authmode = WIFI_AUTH_OPEN
-        },
-    };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
 
@@ -526,6 +556,9 @@ static void br_fine(void)
 
 // ========= MACCHINA A STATI =================================================
 
+static fsm_t * fsm = NULL ;
+
+
 void * fsm_malloc(size_t dim)
 {
 	return os_malloc(dim) ;
@@ -671,7 +704,7 @@ static const event_tuple_t stt_eth[] = {
 	{ CAVO_RJ,  NULL, FSM_NULL_STATE_ID },
 	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
-	{ E_ETH,    eth_eth, FSM_NULL_STATE_ID },
+	{ E_ETH,    eth_eth, BRIDGE },
 	{ E_IP,		NULL, FSM_NULL_STATE_ID }
 } ;
 
@@ -702,7 +735,7 @@ static const event_tuple_t stt_bri[] = {
 	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
 	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
-	{ E_IP,		bri_ip, FSM_NULL_STATE_ID }
+	{ E_IP,		bri_ip, SRV }
 } ;
 
 // Servizio --------------------
@@ -770,7 +803,6 @@ void app_main()
     CHECK_IT( PHY_beg() ) ;
 
     // Ciccio
-	fsm_t * fsm = NULL ;
 	CHECK_IT(
 			RC_FSM_OK ==
 			fsm_create(&fsm,
@@ -835,16 +867,6 @@ void app_main()
 			default: {
 		    	UN_PKT * pP = event.value.p ;
 		    	switch (pP->tipo) {
-		    	case DA_BR: {
-		    			ip_addr_t * ip = (ip_addr_t *) pP->msg ;
-		//    			ip_addr_t * msk = ip + 1 ;
-		//    			ip_addr_t * gw = ip + 2 ;
-
-		        		ESP_LOGI(TAG, "BR indirizzo %s", ipaddr_ntoa(&br.ip_addr)) ;
-		        		// Non devo fermarlo!
-		        		//dhcp_stop(&br) ;
-		    		}
-		    		break ;
 		    	case DA_ETH: {
 #if 0
 						ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
@@ -859,7 +881,7 @@ void app_main()
 		    		}
 		    		break ;
 		    	case DA_WIFI: {
-#if 0
+#if 1
 						ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
 
 						ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",

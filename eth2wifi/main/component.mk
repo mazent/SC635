@@ -5,7 +5,7 @@
 
 COMPONENT_EXTRA_CLEAN := versione.h
 
-test.o: versione.h
+appv.o: versione.h
 
 versione.h:
 	$(COMPONENT_PATH)/versione.sh
