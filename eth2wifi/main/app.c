@@ -1,3 +1,4 @@
+#if 0
 /* Ethernet to WiFi data forwarding Example
 
    For other examples please check:
@@ -516,8 +517,11 @@ static err_t br_if_init(struct netif *netif)
 #else
 	// https://esp-idf.readthedocs.io/en/latest/api-reference/system/system.html#mac-address
 	esp_efuse_mac_get_default(netif->hwaddr) ;
-	// base + 1 = AP mac
-	++netif->hwaddr[5] ;
+	// base + 0 = STA
+	// base + 1 = AP
+	// base + 2 = BT
+	// base + 3 = ETH
+	netif->hwaddr[5] += 1 ;
 #endif
 	/* maximum transfer unit */
 	netif->mtu = 1500;
@@ -586,8 +590,6 @@ static void dhcp_cb(struct netif * nif)
 
 static void br_iniz(void)
 {
-	tcpip_init(NULL, NULL);
-
 	br_addr = ip_addr_any ;
 	netif_add(&br, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, NULL, br_if_init, tcpip_input) ;
 
@@ -609,6 +611,8 @@ void app_main()
 	esp_log_level_set("*", ESP_LOG_INFO) ;
 	
     ESP_ERROR_CHECK(nvs_flash_init());
+
+    tcpip_init(NULL, NULL) ;
 	
 	CHECK_IT( PHY_beg() ) ;
 
@@ -683,3 +687,5 @@ void app_main()
     	CHECK_IT(osOK == osMailFree(pkt, evn.value.p)) ;
     }
 }
+
+#endif
