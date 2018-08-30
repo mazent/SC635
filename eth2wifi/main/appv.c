@@ -581,7 +581,8 @@ typedef enum {
 	DIAG_RIL,
 	E_AP,
 	E_ETH,
-	E_IP
+	E_IP,
+	DATI
 } E_VENTO ;
 
 static const event_description_t desc_evn[] = {
@@ -591,6 +592,7 @@ static const event_description_t desc_evn[] = {
 	{ E_AP, "stazione connessa" },
 	{ E_ETH, "eth connessa" },
 	{ E_IP, "bridge ip" },
+	{ DATI, "dati" },
 	{ FSM_NULL_EVENT_ID, NULL }
 } ;
 
@@ -639,6 +641,7 @@ static const event_tuple_t stt_attesa[] = {
 	{ E_AP,		attesa_ap, RIL_DOIP },
 	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
 	{ E_IP,     NULL, FSM_NULL_STATE_ID },
+	{ DATI,     NULL, FSM_NULL_STATE_ID }
 } ;
 
 // Rileva diagnosi -------------
@@ -669,7 +672,8 @@ static const event_tuple_t stt_rid[] = {
 	{ DIAG_RIL, rid_ril, ETH },
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
 	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
-	{ E_IP,     NULL, FSM_NULL_STATE_ID }
+	{ E_IP,     NULL, FSM_NULL_STATE_ID },
+	{ DATI,     NULL, FSM_NULL_STATE_ID }
 } ;
 
 // Ethernet --------------------
@@ -705,7 +709,8 @@ static const event_tuple_t stt_eth[] = {
 	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
 	{ E_ETH,    eth_eth, BRIDGE },
-	{ E_IP,		NULL, FSM_NULL_STATE_ID }
+	{ E_IP,		NULL, FSM_NULL_STATE_ID },
+	{ DATI,     NULL, FSM_NULL_STATE_ID }
 } ;
 
 // Bridge ----------------------
@@ -735,7 +740,8 @@ static const event_tuple_t stt_bri[] = {
 	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
 	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
-	{ E_IP,		bri_ip, SRV }
+	{ E_IP,		bri_ip, SRV },
+	{ DATI,     NULL, FSM_NULL_STATE_ID }
 } ;
 
 // Servizio --------------------
@@ -744,13 +750,24 @@ static void srv_entra(void)
 {
 }
 
+static RC_FSM_t srv_dati(void * prm)
+{
+	UN_PKT * pP = (UN_PKT *) prm ;
+
+	br_input(pP->msg, pP->len) ;
+
+	return RC_FSM_OK ;
+}
+
+
 static const event_tuple_t stt_srv[] = {
 	{ TASTO,    NULL, FSM_NULL_STATE_ID },
 	{ CAVO_RJ,  NULL, FSM_NULL_STATE_ID },
 	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
 	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
-	{ E_IP,		NULL, FSM_NULL_STATE_ID }
+	{ E_IP,		NULL, FSM_NULL_STATE_ID },
+	{ DATI,     srv_dati, SRV }
 } ;
 
 
@@ -865,51 +882,36 @@ void app_main()
 				}
 				break ;
 			default: {
-		    	UN_PKT * pP = event.value.p ;
-		    	switch (pP->tipo) {
-		    	case DA_ETH: {
+					UN_PKT * pP = event.value.p ;
+					switch (pP->tipo) {
+					case DA_ETH: {
 #if 0
-						ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
+							ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
 
-						ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-								pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+							ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+									pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
-						if (stazioni)
-							esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4);
+							if (stazioni)
+								esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4);
 
-						br_input(pP->msg, pP->len) ;
-		    		}
-		    		break ;
-		    	case DA_WIFI: {
-#if 1
-						ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
+							(void) fsm_engine(fsm, DATI, pP) ;
+						}
+						break ;
+					case DA_WIFI: {
+#if 0
+							ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
 
-						ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-								pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+							ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+									pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
-						if (ethernet)
-							esp_eth_tx(pP->msg, pP->len);
+							if (ethernet)
+								esp_eth_tx(pP->msg, pP->len);
 
-						br_input(pP->msg, pP->len) ;
-		    		}
-		    		break ;
-		    	}
-		    	pkt_free(pP) ;
-
-//					// Comando
-//					UN_BUFFER * msg = (UN_BUFFER *) event.value.p ;
-//					RX_SPC * prx = &rxUart ;
-//					TX_SPC * ptx = &txUart ;
-//
-//					if (SOCKET == msg->orig) {
-//						prx = &rxSock ;
-//						ptx = &txSock ;
-//					}
-//
-//					if ( SPC_esamina(prx, msg) )
-//						esegui(prx, ptx) ;
-//
-//					CHECK_IT(osOK == osPoolFree(pbcid, msg)) ;
+							(void) fsm_engine(fsm, DATI, pP) ;
+						}
+						break ;
+					}
+					pkt_free(pP) ;
 				}
 				break ;
 			}
