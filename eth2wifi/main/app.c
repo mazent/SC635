@@ -11,6 +11,8 @@
  */
 #include <string.h>
 
+#include "rete.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -25,23 +27,18 @@
 
 #include "nvs_flash.h"
 
-
-#include "eth_phy/phy_lan8720.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-
-
 #define ESP_IF_WIFI_XXX	ESP_IF_WIFI_STA
 
 
 #include "mobd.h"
 #include "phy.h"
 
-#include "lwip/netif.h"
-#include "lwip/tcpip.h"
-#include "lwip/snmp.h"
-#include "netif/etharp.h"
-#include "lwip/ethip6.h"
-#include "lwip/dhcp.h"
+//#include "lwip/netif.h"
+//#include "lwip/tcpip.h"
+//#include "lwip/snmp.h"
+//#include "netif/etharp.h"
+//#include "lwip/ethip6.h"
+//#include "lwip/dhcp.h"
 
 static const char * TAG = "bridge";
 
@@ -124,194 +121,44 @@ static int wifi_is_connected = 0 ;
 // Vera se c'e' attivita': non so quanti sono ma ne esiste almeno uno
 static bool ethernet_is_connected = false ;
 
-#define DIM_PKT		1600
-#define NUM_PKT		30
-
-typedef struct {
-    uint8_t msg[DIM_PKT] ;
-    uint16_t len;
-
-    enum {
-    	DA_ETH,
-    	DA_WIFI,
-		DA_BR
-    } tipo ;
-} UN_PKT ;
-
-osMailQDef(pkt, NUM_PKT, UN_PKT) ;
-static osMailQId pkt ;
-
-
-
-static void eth_gpio_config_rmii(void)
-{
-    // RMII data pins are fixed:
-    // TXD0 = GPIO19
-    // TXD1 = GPIO22
-    // TX_EN = GPIO21
-    // RXD0 = GPIO25
-    // RXD1 = GPIO26
-    // CLK == GPIO0
-    phy_rmii_configure_data_interface_pins();
-    // MDC is GPIO 23, MDIO is GPIO 18
-    phy_rmii_smi_configure_pins(23, 18) ;
-}
-
-
-typedef struct {
-	uint8_t dst[6] ;
-	uint8_t srg[6] ;
-	uint16_t type ;
-} ETH_FRAME ;
-
-static uint16_t gira(uint16_t val)
-{
-	union {
-		uint16_t x ;
-		uint8_t b[2] ;
-	} u ;
-	uint8_t tmp ;
-
-	u.x = val ;
-	tmp = u.b[0] ;
-	u.b[0] = u.b[1] ;
-	u.b[1] = tmp ;
-
-	return u.x ;
-}
-
-
-static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
-{
-	if (len > 0) {
-		assert(len < DIM_PKT) ;
-		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
-		if (pP) {
-			pP->tipo = DA_ETH ;
-			pP->len = len ;
-			memcpy(pP->msg, buffer, len) ;
-			if (osOK != osMailPut(pkt, pP)) {
-				ESP_LOGE(TAG, "eth non inviato!!!") ;
-				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
-			}
-		}
-	    else
-	    	ESP_LOGE(TAG, "eth malloc!!!") ;
-	}
-	else
-		ESP_LOGE(TAG, "eth len %d", len) ;
-
-	esp_eth_free_rx_buf(buffer) ;
-
-    return ESP_OK;
-}
-
-static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
-{
-	if (len > 0) {
-		assert(len < DIM_PKT) ;
-		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
-		if (pP) {
-			pP->tipo = DA_WIFI ;
-			pP->len = len ;
-			memcpy(pP->msg, buffer, len) ;
-			if (osOK != osMailPut(pkt, pP)) {
-				ESP_LOGE(TAG, "wifi non inviato!!!") ;
-				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
-			}
-		}
-	    else
-	    	ESP_LOGE(TAG, "wifi malloc!!!") ;
-	}
-	else
-		ESP_LOGE(TAG, "wifi len %d", len) ;
-
-	esp_wifi_internal_free_rx_buffer(eb);
-
-    return ESP_OK;
-}
-
-static void initialise_wifi(void)
-{
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-
-	ESP_ERROR_CHECK(esp_wifi_init_internal(&cfg));
-	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-
-	wifi_config_t wifi_config = {
-		.ap = {
-			.channel = 9,
-			.max_connection = 1,
-			.authmode = WIFI_AUTH_OPEN
-		}
-	} ;
-	{
-		uint8_t mac[6] = { 0 } ;
-		char * ssid = (char *) wifi_config.ap.ssid ;
-
-		esp_efuse_mac_get_default(mac) ;
-
-		sprintf(ssid, "SC635_%02X%02X%02X", mac[3], mac[4], mac[5]) ;
-		wifi_config.ap.ssid_len = strlen(ssid) ;
-	}
-
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
-#if CONFIG_MEZZA_BANDA
-	ESP_ERROR_CHECK(ESP_OK != esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20)) ;
-#endif
-
-	esp_wifi_start() ;
-}
-
-static void initialise_ethernet(void)
-{
-    eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
-
-    /* Set the PHY address in the example configuration */
-    config.phy_addr = 1;
-    config.gpio_config = eth_gpio_config_rmii;
-    config.tcpip_input = tcpip_adapter_eth_input_sta_output;
-
-    esp_eth_init_internal(&config);
-    esp_eth_enable();
-}
+osMessageQDef(comes, 100, uint32_t) ;
+osMessageQId comes = NULL ;
 
 static esp_err_t event_handler(void* ctx, system_event_t* event)
 {
     switch (event->event_id) {
-        case SYSTEM_EVENT_STA_START:
-            printf("SYSTEM_EVENT_STA_START\r\n");
-            break;
-
-        case SYSTEM_EVENT_STA_CONNECTED:
-            printf("SYSTEM_EVENT_STA_CONNECTED\r\n");
-            wifi_is_connected = 1 ;
-
-			{			
-				uint8_t mac[6] = {0} ;
-				esp_wifi_get_mac(WIFI_IF_STA, mac) ;
-				ESP_LOGI(TAG, "STA: "MACSTR"", MAC2STR(mac)) ;
-			}
-
-			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, tcpip_adapter_wifi_input_eth_output);
-            break;
-
-        case SYSTEM_EVENT_STA_GOT_IP:
-            printf("SYSTEM_EVENT_STA_GOT_IP\r\n");
-            break;
-
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            printf("SYSTEM_EVENT_STA_DISCONNECTED\r\n");
-            wifi_is_connected = 0 ;
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
-            esp_wifi_connect();
-            break;
+//        case SYSTEM_EVENT_STA_START:
+//            printf("SYSTEM_EVENT_STA_START\r\n");
+//            break;
+//
+//        case SYSTEM_EVENT_STA_CONNECTED:
+//            printf("SYSTEM_EVENT_STA_CONNECTED\r\n");
+//            wifi_is_connected = 1 ;
+//
+//			{
+//				uint8_t mac[6] = {0} ;
+//				esp_wifi_get_mac(WIFI_IF_STA, mac) ;
+//				ESP_LOGI(TAG, "STA: "MACSTR"", MAC2STR(mac)) ;
+//			}
+//
+//			esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, wifi_tcpip_input);
+//            break;
+//
+//        case SYSTEM_EVENT_STA_GOT_IP:
+//            printf("SYSTEM_EVENT_STA_GOT_IP\r\n");
+//            break;
+//
+//        case SYSTEM_EVENT_STA_DISCONNECTED:
+//            printf("SYSTEM_EVENT_STA_DISCONNECTED\r\n");
+//            wifi_is_connected = 0 ;
+//            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL);
+//            esp_wifi_connect();
+//            break;
 
         case SYSTEM_EVENT_AP_STACONNECTED:
             printf("SYSTEM_EVENT_AP_STACONNECTED\r\n");
             if (0 == wifi_is_connected)
-            	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
+            	ap_attivo(true) ;
 
             ++wifi_is_connected ;
             break;
@@ -330,7 +177,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
             printf("SYSTEM_EVENT_AP_STADISCONNECTED\r\n");
             --wifi_is_connected ;
             if (0 == wifi_is_connected)
-            	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+            	ap_attivo(false) ;
             break;
 
         case SYSTEM_EVENT_ETH_CONNECTED:
@@ -358,211 +205,11 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
     return ESP_OK;
 }
 
-static struct netif br ;
-
-static void br_input(void *buffer, uint16_t len)
-{
-	struct pbuf *p;
-
-#if 0
-	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
-
-	ESP_LOGI(TAG, "BR in [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
-
-//	if(buffer== NULL || !netif_is_up(&br))
-//		return;
-
-#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
-	if (p == NULL) {
-		return;
-	}
-	p->l2_owner = NULL;
-	memcpy(p->payload, buffer, len);
-
-	/* full packet send to tcpip_thread to process */
-	if (br->input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-		pbuf_free(p);
-	}
-
-#else
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
-	if (p == NULL)
-		return;
-
-	p->payload = buffer;
-	p->l2_owner = &br;
-	p->l2_buf = buffer;
-
-	/* full packet send to tcpip_thread to process */
-	if (br.input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-		p->l2_owner = NULL;
-		pbuf_free(p);
-	}
-#endif
-}
-
-static err_t br_output(struct netif *netif, struct pbuf *p)
-{
-#if 0
-	ETH_FRAME * pF = (ETH_FRAME *) p->payload ;
-
-	ESP_LOGI(TAG, "BR out [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-			p->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
-
-	if (wifi_is_connected)
-		esp_wifi_internal_tx(ESP_IF_WIFI_XXX, p->payload, p->len - 4) ;
-
-	if (ethernet_is_connected)
-		esp_eth_tx(p->payload, p->len) ;
-
-	return ERR_OK;
-}
-
-
-static err_t br_if_init(struct netif *netif)
-{
-//#if LWIP_NETIF_HOSTNAME
-//	/* Initialize interface hostname */
-//	netif->hostname = "lwip";
-//#endif /* LWIP_NETIF_HOSTNAME */
-
-	/*
-	 * Initialize the snmp variables and counters inside the struct netif.
-	 * The last argument should be replaced with your link speed, in units
-	 * of bits per second.
-	 */
-	MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, 100000000);
-
-	netif->name[0] = 'b' ;
-	netif->name[1] = 'r' ;
-	netif->num = 0 ;
-
-	/* We directly use etharp_output() here to save a function call.
-	 * You can instead declare your own function an call etharp_output()
-	 * from it if you have to do some checks before sending (e.g. if link
-	 * is available...) */
-	netif->output = etharp_output;
-#if LWIP_IPV6
-	netif->output_ip6 = ethip6_output;
-#endif /* LWIP_IPV6 */
-	netif->linkoutput = br_output;
-
-	/* set MAC hardware address length */
-	netif->hwaddr_len = ETHARP_HWADDR_LEN;
-
-	/* set MAC hardware address */
-#if 0
-	netif->hwaddr[0] = 0xAA ;
-	netif->hwaddr[1] = 0xBB ;
-	netif->hwaddr[2] = 0xCC ;
-	netif->hwaddr[3] = 0xDD ;
-	netif->hwaddr[4] = 0xEE ;
-	netif->hwaddr[5] = 0xFF ;
-#else
-	// https://esp-idf.readthedocs.io/en/latest/api-reference/system/system.html#mac-address
-	esp_efuse_mac_get_default(netif->hwaddr) ;
-	// base + 0 = STA
-	// base + 1 = AP
-	// base + 2 = BT
-	// base + 3 = ETH
-	netif->hwaddr[5] += 1 ;
-#endif
-	/* maximum transfer unit */
-	netif->mtu = 1500;
-
-	/* device capabilities */
-	/* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
-	netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP ;
-
-	return ERR_OK;
-}
-
-static ip_addr_t br_addr ;
-
-static void dhcp_cb(struct netif * nif)
-{
-	do {
-		if (ip_addr_cmp(&nif->ip_addr, &ip_addr_any)) {
-			// Non ho ancora un indirizzo
-			ESP_LOGE(TAG, "br dhcp_cb") ;
-			break ;
-		}
-
-		if (ip_addr_cmp(&nif->ip_addr, &br_addr)) {
-			// Stesso di prima
-			ESP_LOGE(TAG, "br dhcp_cb stesso ip") ;
-			break ;
-		}
-
-		// Nuovo indirizzo!
-		br_addr = nif->ip_addr ;
-#if 1
-		{
-			char ip[20], msk[20], gw[20] ;
-
-			strcpy(ip, ipaddr_ntoa(&nif->ip_addr)) ;
-			strcpy(msk, ipaddr_ntoa(&nif->netmask)) ;
-			strcpy(gw, ipaddr_ntoa(&nif->gw)) ;
-
-			ESP_LOGI(TAG, "BR dhcp_cb %s %s %s", ip, msk, gw) ;
-		}
-#endif
-
-		// Avviso
-		UN_PKT * pP = (UN_PKT *) osMailAlloc(pkt, 0) ;
-		if (pP) {
-			ip_addr_t * pi = (ip_addr_t *) pP->msg ;
-
-			pP->tipo = DA_BR ;
-
-			*pi = nif->ip_addr ;
-			++pi ;
-			*pi = nif->netmask ;
-			++pi ;
-			*pi = nif->gw ;
-
-			if (osOK != osMailPut(pkt, pP)) {
-				ESP_LOGE(TAG, "br dhcp_cb non inviato!!!") ;
-				CHECK_IT(osOK == osMailFree(pkt, pP)) ;
-			}
-		}
-		else
-			ESP_LOGE(TAG, "br dhcp_cb malloc!!!") ;
-
-	} while (false) ;
-}
-
-static void br_iniz(void)
-{
-	br_addr = ip_addr_any ;
-	netif_add(&br, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, NULL, br_if_init, tcpip_input) ;
-
-	netif_set_up(&br) ;
-	netif_set_link_up(&br);
-
-	dhcp_start(&br) ;
-	dhcp_set_cb(&br, dhcp_cb);
-	//autoip_start(&br) ;
-}
-
-static void br_fine(void)
-{
-	netif_set_down(&br) ;
-}
-
 void app_main()
 {
 	esp_log_level_set("*", ESP_LOG_INFO) ;
 	
     ESP_ERROR_CHECK(nvs_flash_init());
-
-    tcpip_init(NULL, NULL) ;
 	
 	CHECK_IT( PHY_beg() ) ;
 
@@ -580,60 +227,68 @@ void app_main()
 	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
 	}
 
-	pkt = osMailCreate(osMailQ(pkt), NULL) ;
+	// Scambio messaggi
+	comes = osMessageCreate(osMessageQ(comes), NULL) ;
+	assert(comes) ;
 
     esp_event_loop_init(event_handler, NULL);
 
-    initialise_ethernet();
+    tcpip_init(NULL, NULL) ;
 
-    initialise_wifi();
+    eth_iniz() ;
+
+    ap_iniz() ;
 
     br_iniz() ;
 
     while (true) {
-    	osEvent evn = osMailGet(pkt, osWaitForever) ;
-    	assert(osEventMail == evn.status) ;
+    	osEvent event = osMessageGet(comes, osWaitForever) ;
+    	assert(osEventMessage == event.status) ;
 
-    	UN_PKT * pP = evn.value.p ;
-    	switch (pP->tipo) {
-    	case DA_BR: {
-    			ip_addr_t * ip = (ip_addr_t *) pP->msg ;
-//    			ip_addr_t * msk = ip + 1 ;
-//    			ip_addr_t * gw = ip + 2 ;
-
-        		ESP_LOGI(TAG, "BR indirizzo %s", ipaddr_ntoa(&br.ip_addr)) ;
-        		// Non devo fermarlo!
-        		//dhcp_stop(&br) ;
-    		}
-    		break ;
-    	case DA_ETH: {
+    	if (osEventMessage == event.status) {
+    		switch (event.value.v) {
+			case MSG_BRIP: {
+//					bool valido = true ;
+//					if (ip_addr_cmp(&br_addr, &ip_addr_any))
+//						valido = false ;
+//					(void) fsm_engine(fsm, E_IP, &valido) ;
+				}
+				break ;
+			default: {
+					UN_PKT * pP = evn.value.p ;
+					switch (pP->tipo) {
+					case DA_ETH: {
 #if 0
-				ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
+							ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
 
-				ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-						pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+							ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+									pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
-				if (wifi_is_connected)
-					esp_wifi_internal_tx(ESP_IF_WIFI_XXX, pP->msg, pP->len - 4);
+							if (wifi_is_connected)
+								esp_wifi_internal_tx(ESP_IF_WIFI_XXX, pP->msg, pP->len - 4);
 
-				br_input(pP->msg, pP->len) ;
-    		}
-    		break ;
-    	case DA_WIFI: {
+							br_input(pP->msg, pP->len) ;
+						}
+						break ;
+					case DA_WIFI: {
 #if 0
-				ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
+							ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
 
-				ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-						pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
+							ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
+									pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
-				if (ethernet_is_connected)
-					esp_eth_tx(pP->msg, pP->len);
+							if (ethernet_is_connected)
+								esp_eth_tx(pP->msg, pP->len);
 
-				br_input(pP->msg, pP->len) ;
+							br_input(pP->msg, pP->len) ;
+						}
+						break ;
+					}
+
+					pkt_free(pP) ;
+				}
+				break ;
     		}
-    		break ;
     	}
-
-    	CHECK_IT(osOK == osMailFree(pkt, evn.value.p)) ;
     }
 }
