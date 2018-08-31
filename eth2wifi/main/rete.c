@@ -144,8 +144,11 @@ void br_input(void *buffer, uint16_t len)
 			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
 
-	if(buffer== NULL || !netif_is_up(&br))
+	if (buffer == NULL)
 		return;
+
+	if (ip_addr_cmp(&br.ip_addr, &ip_addr_any))
+		return ;
 
 #ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
@@ -188,10 +191,10 @@ static err_t br_output(struct netif *netif, struct pbuf *p)
 			p->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
 #endif
 
-	if (stazioni)
+	if (ap_tx())
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len - 4) ;
 
-	if (ethernet)
+	if (eth_tx())
 		esp_eth_tx(p->payload, p->len) ;
 
 	return ERR_OK;
@@ -293,6 +296,13 @@ static void dhcp_cb(struct netif * nif)
 
 void br_iniz(void)
 {
+	static bool ini = false ;
+
+	if (!ini) {
+		tcpip_init(NULL, NULL) ;
+		ini = true ;
+	}
+
 	br_addr = ip_addr_any ;
 	netif_add(&br, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, &ip_addr_any.u_addr.ip4, NULL, br_if_init, tcpip_input) ;
 
@@ -307,4 +317,13 @@ void br_iniz(void)
 void br_fine(void)
 {
 	netif_set_down(&br) ;
+}
+
+bool br_valido(void)
+{
+	bool valido = true ;
+	if (ip_addr_cmp(&br_addr, &ip_addr_any))
+		valido = false ;
+
+	return valido ;
 }

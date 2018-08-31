@@ -18,6 +18,9 @@
 
 #include "esp_log.h"
 #include "esp_event_loop.h"
+#include "esp_wifi.h"
+#include "esp_wifi_internal.h"
+#include "esp_eth.h"
 #include "nvs_flash.h"
 
 extern void esegui(RX_SPC *, TX_SPC *) ;
@@ -73,6 +76,17 @@ static void rid(void)
 
 static int stazioni = 0 ;
 static bool ethernet = false ;
+
+bool eth_tx(void)
+{
+	return ethernet ;
+}
+
+bool ap_tx(void)
+{
+	return stazioni > 0 ;
+}
+
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -469,8 +483,6 @@ void app_main()
 
     ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
 
-    tcpip_init(NULL, NULL) ;
-
     timArimb = osTimerCreate(osTimer(timArimb), osTimerOnce, NULL) ;
     assert(timArimb) ;
 
@@ -538,9 +550,8 @@ void app_main()
 				(void) fsm_engine(fsm, E_ETH, &ethernet) ;
 				break ;
 			case MSG_BRIP: {
-					bool valido = true ;
-					if (ip_addr_cmp(&br_addr, &ip_addr_any))
-						valido = false ;
+					bool valido = br_valido() ;
+
 					(void) fsm_engine(fsm, E_IP, &valido) ;
 				}
 				break ;

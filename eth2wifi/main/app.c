@@ -121,6 +121,17 @@ static int wifi_is_connected = 0 ;
 // Vera se c'e' attivita': non so quanti sono ma ne esiste almeno uno
 static bool ethernet_is_connected = false ;
 
+bool eth_tx(void)
+{
+	return ethernet_is_connected ;
+}
+
+bool ap_tx(void)
+{
+	return wifi_is_connected > 0 ;
+}
+
+
 osMessageQDef(comes, 100, uint32_t) ;
 osMessageQId comes = NULL ;
 
@@ -205,6 +216,7 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
     return ESP_OK;
 }
 
+
 void app_main()
 {
 	esp_log_level_set("*", ESP_LOG_INFO) ;
@@ -233,8 +245,6 @@ void app_main()
 
     esp_event_loop_init(event_handler, NULL);
 
-    tcpip_init(NULL, NULL) ;
-
     eth_iniz() ;
 
     ap_iniz() ;
@@ -255,7 +265,7 @@ void app_main()
 				}
 				break ;
 			default: {
-					UN_PKT * pP = evn.value.p ;
+					UN_PKT * pP = event.value.p ;
 					switch (pP->tipo) {
 					case DA_ETH: {
 #if 0

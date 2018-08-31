@@ -54,11 +54,14 @@ static inline uint16_t gira(uint16_t val)
 
 void ap_iniz(void) ;
 void ap_attivo(bool) ;
+extern bool ap_tx(void) ;
 
 void eth_iniz(void) ;
+extern bool eth_tx(void) ;
 
 void br_iniz(void) ;
 void br_fine(void) ;
 void br_input(void *, uint16_t) ;
+bool br_valido(void) ;
 
 #endif
