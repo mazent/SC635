@@ -63,7 +63,7 @@ const uint32_t VERSIONE = VER ;
 const char * DATA = __DATE__ ;
 
 // coda dei messaggi
-osMessageQDef(comes, 2 * NUM_BUFFER, UN_BUFFER *) ;
+osMessageQDef(comes, 100, uint32_t) ;
 static osMessageQId comes = NULL ;
 	// speciali (da 0x50002000 in su, indirizzi riservati)
 #define MSG_TASTO		0x51B56557
@@ -351,6 +351,7 @@ static void ap_iniz(void)
 
     wifi_config_t wifi_config = {
         .ap = {
+        	.channel = 9,
             .max_connection = 1,
             .authmode = WIFI_AUTH_OPEN
         }
@@ -367,6 +368,9 @@ static void ap_iniz(void)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+#if CONFIG_MEZZA_BANDA
+    ESP_ERROR_CHECK(ESP_OK != esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20)) ;
+#endif
 
     esp_wifi_start() ;
 }

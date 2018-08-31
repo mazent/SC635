@@ -1,7 +1,7 @@
 #ifndef FSM_CFG_H_
 #define FSM_CFG_H_
 
-#define STAMPA_DBG
+//#define STAMPA_DBG
 #include "esp_log.h"
 
 #ifdef STAMPA_DBG

@@ -9,3 +9,6 @@ appv.o: versione.h
 
 versione.h:
 	$(COMPONENT_PATH)/versione.sh
+
+$(call compile_only_if,$(CONFIG_USA_MS),appv.o)
+$(call compile_only_if_not,$(CONFIG_USA_MS),app.o)

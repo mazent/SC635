@@ -1,4 +1,3 @@
-#if 0
 /* Ethernet to WiFi data forwarding Example
 
    For other examples please check:
@@ -26,20 +25,12 @@
 
 #include "nvs_flash.h"
 
-#ifdef CONFIG_PHY_LAN8720
+
 #include "eth_phy/phy_lan8720.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#endif
-#ifdef CONFIG_PHY_TLK110
-#include "eth_phy/phy_tlk110.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
-#endif
 
-#ifdef CONFIG_ETH_TO_STATION_MODE
-#	define ESP_IF_WIFI_XXX	ESP_IF_WIFI_STA
-#else
-#	define ESP_IF_WIFI_XXX 	ESP_IF_WIFI_AP
-#endif
+
+#define ESP_IF_WIFI_XXX	ESP_IF_WIFI_STA
 
 
 #include "mobd.h"
@@ -126,10 +117,6 @@ static void stampa_registri(void)
 }
 
 
-#define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
-#define PIN_SMI_MDC   CONFIG_PHY_SMI_MDC_PIN
-#define PIN_SMI_MDIO  CONFIG_PHY_SMI_MDIO_PIN
-
 // AP: numero di stazioni connesse
 // STA: 0/1
 static int wifi_is_connected = 0 ;
@@ -155,42 +142,6 @@ osMailQDef(pkt, NUM_PKT, UN_PKT) ;
 static osMailQId pkt ;
 
 
-#ifdef CONFIG_PHY_USE_POWER_PIN
-/* This replaces the default PHY power on/off function with one that
-   also uses a GPIO for power on/off.
-
-   If this GPIO is not connected on your device (and PHY is always powered), you can use the default PHY-specific power
-   on/off function rather than overriding with this one.
- */
-static void phy_device_power_enable_via_gpio(bool enable)
-{
-    assert(DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable);
-
-    if (!enable) {
-        /* Do the PHY-specific power_enable(false) function before powering down */
-        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(false);
-    }
-
-    gpio_pad_select_gpio(PIN_PHY_POWER);
-    gpio_set_direction(PIN_PHY_POWER, GPIO_MODE_OUTPUT);
-
-    if (enable == true) {
-        gpio_set_level(PIN_PHY_POWER, 1);
-        ESP_LOGD(TAG, "phy_device_power_enable(TRUE)");
-    } else {
-        gpio_set_level(PIN_PHY_POWER, 0);
-        ESP_LOGD(TAG, "power_enable(FALSE)");
-    }
-
-    // Allow the power up/down to take effect, min 300us
-    vTaskDelay(1);
-
-    if (enable) {
-        /* Run the PHY-specific power on operations now the PHY has power */
-        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(true);
-    }
-}
-#endif
 
 static void eth_gpio_config_rmii(void)
 {
@@ -203,7 +154,7 @@ static void eth_gpio_config_rmii(void)
     // CLK == GPIO0
     phy_rmii_configure_data_interface_pins();
     // MDC is GPIO 23, MDIO is GPIO 18
-    phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
+    phy_rmii_smi_configure_pins(23, 18) ;
 }
 
 
@@ -282,31 +233,35 @@ static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len,
 
 static void initialise_wifi(void)
 {
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init_internal(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-#ifdef CONFIG_ETH_TO_STATION_MODE
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = CONFIG_DEMO_SSID,
-            .password = CONFIG_DEMO_PASSWORD,
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-#else
-    wifi_config_t wifi_config = {
-        .ap = {
-            .ssid = CONFIG_DEMO_SSID,
-            .password = CONFIG_DEMO_PASSWORD,
-            .ssid_len = strlen(CONFIG_DEMO_SSID),
-            .max_connection = 1,
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+	ESP_ERROR_CHECK(esp_wifi_init_internal(&cfg));
+	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+
+	wifi_config_t wifi_config = {
+		.ap = {
+			.channel = 9,
+			.max_connection = 1,
+			.authmode = WIFI_AUTH_OPEN
+		}
+	} ;
+	{
+		uint8_t mac[6] = { 0 } ;
+		char * ssid = (char *) wifi_config.ap.ssid ;
+
+		esp_efuse_mac_get_default(mac) ;
+
+		sprintf(ssid, "SC635_%02X%02X%02X", mac[3], mac[4], mac[5]) ;
+		wifi_config.ap.ssid_len = strlen(ssid) ;
+	}
+
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
+#if CONFIG_MEZZA_BANDA
+	ESP_ERROR_CHECK(ESP_OK != esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20)) ;
 #endif
-    esp_wifi_start() ;
+
+	esp_wifi_start() ;
 }
 
 static void initialise_ethernet(void)
@@ -314,15 +269,10 @@ static void initialise_ethernet(void)
     eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
 
     /* Set the PHY address in the example configuration */
-    config.phy_addr = CONFIG_PHY_ADDRESS;
+    config.phy_addr = 1;
     config.gpio_config = eth_gpio_config_rmii;
     config.tcpip_input = tcpip_adapter_eth_input_sta_output;
 
-#ifdef CONFIG_PHY_USE_POWER_PIN
-    /* Replace the default 'power enable' function with an example-specific
-       one that toggles a power GPIO. */
-    config.phy_power_enable = phy_device_power_enable_via_gpio;
-#endif
     esp_eth_init_internal(&config);
     esp_eth_enable();
 }
@@ -687,5 +637,3 @@ void app_main()
     	CHECK_IT(osOK == osMailFree(pkt, evn.value.p)) ;
     }
 }
-
-#endif
