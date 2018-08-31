@@ -13,6 +13,8 @@
 
 static const char * TAG = "rete";
 
+// ========= WIFI =============================================================
+
 static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
@@ -77,6 +79,8 @@ void ap_attivo(bool si)
 	else
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 }
+
+// ========= ETHERNET =========================================================
 
 static void eth_gpio_config_rmii(void)
 {
@@ -294,6 +298,11 @@ static void dhcp_cb(struct netif * nif)
 	} while (false) ;
 }
 
+static void dhcps_cb(u8_t client_ip[4])
+{
+	ESP_LOGI(TAG, "dhcps_cb") ;
+}
+
 void br_iniz(void)
 {
 	static bool ini = false ;
@@ -308,10 +317,15 @@ void br_iniz(void)
 
 	netif_set_up(&br) ;
 	netif_set_link_up(&br);
-
+#if 0
 	dhcp_start(&br) ;
 	dhcp_set_cb(&br, dhcp_cb);
-	//autoip_start(&br) ;
+#else
+	ip4_addr_t server_ip ;
+    IP4_ADDR(&server_ip, 10,0,0,1) ;
+    dhcps_set_new_lease_cb(dhcps_cb) ;
+    dhcps_start(&br, server_ip) ;
+#endif
 }
 
 void br_fine(void)
