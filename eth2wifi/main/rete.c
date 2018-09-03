@@ -251,7 +251,7 @@ static err_t br_if_init(struct netif *netif)
 	// base + 1 = AP
 	// base + 2 = BT
 	// base + 3 = ETH
-	netif->hwaddr[5] += 1 ;
+	netif->hwaddr[5] += 2 ;
 #endif
 	/* maximum transfer unit */
 	netif->mtu = 1500;
