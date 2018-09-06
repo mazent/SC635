@@ -13,6 +13,41 @@
 
 static const char * TAG = "rete";
 
+void stampa_eth(const char * t, const uint8_t * p, int dim)
+{
+	if (NULL == t)
+		t = "" ;
+
+#if 0
+	ETH_FRAME * pF = (ETH_FRAME *) p ;
+	const char * tipo = NULL ;
+	uint16_t et = gira(pF->type) ;
+
+	switch (et) {
+	case 0x0800:
+		tipo = "IPv4" ;
+		break ;
+	case 0x86DD:
+		tipo = "IPv6" ;
+		break ;
+	case 0x0806:
+		tipo = "ARP" ;
+		break ;
+	default: {
+			static char xxx[20] ;
+			sprintf(xxx, "? %04X ?", et) ;
+			tipo = xxx ;
+		}
+		break ;
+	}
+
+	ESP_LOGI(TAG, "%s: [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %s",
+			t, dim, MAC2STR(pF->srg), MAC2STR(pF->dst), tipo) ;
+#endif
+}
+
+// ========= WIFI =============================================================
+
 static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
@@ -78,6 +113,8 @@ void ap_attivo(bool si)
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 }
 
+// ========= ETHERNET =========================================================
+
 static void eth_gpio_config_rmii(void)
 {
     // RMII data pins are fixed:
@@ -130,6 +167,7 @@ void eth_iniz(void)
 
 // ========= BRIDGE ===========================================================
 
+static bool ini = false ;
 static struct netif br ;
 static ip_addr_t br_addr ;
 
@@ -137,18 +175,19 @@ void br_input(void *buffer, uint16_t len)
 {
 	struct pbuf *p;
 
-#if 0
-	ETH_FRAME * pF = (ETH_FRAME *) buffer ;
-
-	ESP_LOGI(TAG, "BR in [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-			len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
+	if (!ini)
+		return ;
 
 	if (buffer == NULL)
 		return;
 
-	if (ip_addr_cmp(&br.ip_addr, &ip_addr_any))
+	if (ip_addr_cmp(&br.ip_addr, &ip_addr_any)) {
+		ESP_LOGI(TAG, "! br_input: ip nullo !") ;
 		return ;
+	}
+
+	//stampa_eth("??? -> BR", buffer, len) ;
+
 
 #ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
@@ -184,18 +223,21 @@ void br_input(void *buffer, uint16_t len)
 
 static err_t br_output(struct netif *netif, struct pbuf *p)
 {
-#if 0
-	ETH_FRAME * pF = (ETH_FRAME *) p->payload ;
+	int conta = 0 ;
 
-	ESP_LOGI(TAG, "BR out [%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-			p->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
+	if (ap_tx()) {
+		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len) ;
+		++conta ;
+	}
 
-	if (ap_tx())
-		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len - 4) ;
-
-	if (eth_tx())
+	if (eth_tx()) {
 		esp_eth_tx(p->payload, p->len) ;
+		++conta ;
+	}
+
+	if (conta) {
+		//stampa_eth("br_output", p->payload, p->len) ;
+	}
 
 	return ERR_OK;
 }
@@ -233,7 +275,7 @@ static err_t br_if_init(struct netif *netif)
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
 	/* set MAC hardware address */
-#if 0
+#if 1
 	netif->hwaddr[0] = 0xAA ;
 	netif->hwaddr[1] = 0xBB ;
 	netif->hwaddr[2] = 0xCC ;
@@ -294,10 +336,13 @@ static void dhcp_cb(struct netif * nif)
 	} while (false) ;
 }
 
+static void dhcps_cb(u8_t client_ip[4])
+{
+	ESP_LOGI(TAG, "dhcps_cb: %d.%d.%d.%d", client_ip[0], client_ip[1], client_ip[2], client_ip[3]) ;
+}
+
 void br_iniz(void)
 {
-	static bool ini = false ;
-
 	if (!ini) {
 		tcpip_init(NULL, NULL) ;
 		ini = true ;
@@ -308,10 +353,26 @@ void br_iniz(void)
 
 	netif_set_up(&br) ;
 	netif_set_link_up(&br);
-
+#if 0
 	dhcp_start(&br) ;
 	dhcp_set_cb(&br, dhcp_cb);
-	//autoip_start(&br) ;
+#else
+	ip4_addr_t br_ip, br_msk, br_gw ;
+
+	IP4_ADDR(&br_gw, 0,0,0,0) ;
+
+#if 1
+    IP4_ADDR(&br_ip, 10,10,10,1) ;
+#else
+    IP4_ADDR(&br_ip, 169,254,10,1) ;
+#endif
+    // Comunque il dhcps fornisce questa maschera
+    IP4_ADDR(&br_msk, 255,255,255,0) ;
+    netif_set_addr(&br, &br_ip, &br_msk, &br_gw) ;
+
+    dhcps_set_new_lease_cb(dhcps_cb) ;
+    dhcps_start(&br, br_ip) ;
+#endif
 }
 
 void br_fine(void)

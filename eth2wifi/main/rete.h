@@ -51,6 +51,8 @@ static inline uint16_t gira(uint16_t val)
 	return u.x ;
 }
 
+void stampa_eth(const char * t, const uint8_t * p, int dim) ;
+
 
 void ap_iniz(void) ;
 void ap_attivo(bool) ;
