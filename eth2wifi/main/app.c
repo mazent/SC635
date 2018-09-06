@@ -27,18 +27,9 @@
 
 #include "nvs_flash.h"
 
-#define ESP_IF_WIFI_XXX	ESP_IF_WIFI_STA
-
 
 #include "mobd.h"
 #include "phy.h"
-
-//#include "lwip/netif.h"
-//#include "lwip/tcpip.h"
-//#include "lwip/snmp.h"
-//#include "netif/etharp.h"
-//#include "lwip/ethip6.h"
-//#include "lwip/dhcp.h"
 
 static const char * TAG = "bridge";
 
@@ -248,9 +239,9 @@ void app_main()
     eth_iniz() ;
 
     ap_iniz() ;
-
+#if 1
     br_iniz() ;
-
+#endif
     while (true) {
     	osEvent event = osMessageGet(comes, osWaitForever) ;
     	assert(osEventMessage == event.status) ;
@@ -268,27 +259,19 @@ void app_main()
 					UN_PKT * pP = event.value.p ;
 					switch (pP->tipo) {
 					case DA_ETH: {
-#if 0
-							ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
+							if (wifi_is_connected) {
+								esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4) ;
+								stampa_eth("ETH -> WiFi", pP->msg, pP->len - 4) ;
+							}
 
-							ESP_LOGI(TAG, "ETH[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-									pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
-							if (wifi_is_connected)
-								esp_wifi_internal_tx(ESP_IF_WIFI_XXX, pP->msg, pP->len - 4);
-
-							br_input(pP->msg, pP->len) ;
+							br_input(pP->msg, pP->len - 4) ;
 						}
 						break ;
 					case DA_WIFI: {
-#if 0
-							ETH_FRAME * pF = (ETH_FRAME *) pP->msg ;
-
-							ESP_LOGI(TAG, "WiFi[%d] %02X:%02X:%02X:%02X:%02X:%02X -> %02X:%02X:%02X:%02X:%02X:%02X %04X",
-									pP->len, MAC2STR(pF->srg), MAC2STR(pF->dst), gira(pF->type)) ;
-#endif
-							if (ethernet_is_connected)
+							if (ethernet_is_connected) {
 								esp_eth_tx(pP->msg, pP->len);
+								stampa_eth("WiFi -> ETH", pP->msg, pP->len);
+							}
 
 							br_input(pP->msg, pP->len) ;
 						}

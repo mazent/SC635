@@ -411,23 +411,7 @@ static RC_FSM_t bri_ip(void * prm)
 	}
 }
 
-static const event_tuple_t stt_bri[] = {
-	{ TASTO,    NULL, FSM_NULL_STATE_ID },
-	{ CAVO_RJ,  NULL, FSM_NULL_STATE_ID },
-	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
-	{ E_AP,		NULL, FSM_NULL_STATE_ID },
-	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
-	{ E_IP,		bri_ip, SRV },
-	{ DATI,     NULL, FSM_NULL_STATE_ID }
-} ;
-
-// Servizio --------------------
-
-static void srv_entra(void)
-{
-}
-
-static RC_FSM_t srv_dati(void * prm)
+static RC_FSM_t bri_dati(void * prm)
 {
 	UN_PKT * pP = (UN_PKT *) prm ;
 
@@ -437,6 +421,22 @@ static RC_FSM_t srv_dati(void * prm)
 }
 
 
+static const event_tuple_t stt_bri[] = {
+	{ TASTO,    NULL, FSM_NULL_STATE_ID },
+	{ CAVO_RJ,  NULL, FSM_NULL_STATE_ID },
+	{ DIAG_RIL, NULL, FSM_NULL_STATE_ID },
+	{ E_AP,		NULL, FSM_NULL_STATE_ID },
+	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
+	{ E_IP,		bri_ip, SRV },
+	{ DATI,     bri_dati, BRIDGE }
+} ;
+
+// Servizio --------------------
+
+static void srv_entra(void)
+{
+}
+
 static const event_tuple_t stt_srv[] = {
 	{ TASTO,    NULL, FSM_NULL_STATE_ID },
 	{ CAVO_RJ,  NULL, FSM_NULL_STATE_ID },
@@ -444,7 +444,7 @@ static const event_tuple_t stt_srv[] = {
 	{ E_AP,		NULL, FSM_NULL_STATE_ID },
 	{ E_ETH,    NULL, FSM_NULL_STATE_ID },
 	{ E_IP,		NULL, FSM_NULL_STATE_ID },
-	{ DATI,     srv_dati, SRV }
+	{ DATI,     bri_dati, SRV }
 } ;
 
 
