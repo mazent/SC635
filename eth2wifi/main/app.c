@@ -239,7 +239,7 @@ void app_main()
     eth_iniz() ;
 
     ap_iniz() ;
-#if 1
+#if 0
     br_iniz() ;
 #endif
     while (true) {
