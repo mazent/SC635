@@ -12,6 +12,8 @@ typedef struct {
     	DA_WIFI
     } tipo ;
 
+    void * eb ;
+
     uint16_t len ;
 
     uint8_t msg[1] ;
@@ -63,6 +65,7 @@ extern bool eth_tx(void) ;
 
 void br_iniz(void) ;
 void br_fine(void) ;
+void br_pkt(UN_PKT *) ;
 void br_input(void *, uint16_t) ;
 bool br_valido(void) ;
 

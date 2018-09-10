@@ -18,7 +18,7 @@ void stampa_eth(const char * t, const uint8_t * p, int dim)
 	if (NULL == t)
 		t = "" ;
 
-#if 0
+#if 1
 	ETH_FRAME * pF = (ETH_FRAME *) p ;
 	const char * tipo = NULL ;
 	uint16_t et = gira(pF->type) ;
@@ -50,16 +50,21 @@ void stampa_eth(const char * t, const uint8_t * p, int dim)
 
 static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 {
+	bool inviato = false ;
+
 	if (len > 0) {
 		UN_PKT * pP = pkt_malloc(len) ;
 		if (pP) {
 			pP->tipo = DA_WIFI ;
 			pP->len = len ;
+			pP->eb = eb ;
 			memcpy(pP->msg, buffer, len) ;
 			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "wifi non inviato!!!") ;
 				pkt_free(pP) ;
 			}
+			else
+				inviato = true ;
 		}
 	    else
 	    	ESP_LOGE(TAG, "wifi malloc!!!") ;
@@ -67,7 +72,8 @@ static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 	else
 		ESP_LOGE(TAG, "wifi len %d", len) ;
 
-	esp_wifi_internal_free_rx_buffer(eb);
+	if (!inviato)
+		esp_wifi_internal_free_rx_buffer(eb);
 
     return ESP_OK;
 }
@@ -131,6 +137,8 @@ static void eth_gpio_config_rmii(void)
 
 static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 {
+	bool inviato = false ;
+
 	if (len > 0) {
 		UN_PKT * pP = pkt_malloc(len) ;
 		if (pP) {
@@ -141,6 +149,8 @@ static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 				ESP_LOGE(TAG, "eth non inviato!!!") ;
 				pkt_free(pP) ;
 			}
+			else
+				inviato = true ;
 		}
 	    else
 	    	ESP_LOGE(TAG, "eth malloc!!!") ;
@@ -148,7 +158,8 @@ static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 	else
 		ESP_LOGE(TAG, "eth len %d", len) ;
 
-	esp_eth_free_rx_buf(buffer) ;
+	if (!inviato)
+		esp_eth_free_rx_buf(buffer) ;
 
     return ESP_OK;
 }
@@ -188,7 +199,6 @@ void br_input(void *buffer, uint16_t len)
 
 	//stampa_eth("??? -> BR", buffer, len) ;
 
-
 #ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
 	if (p == NULL) {
@@ -196,13 +206,6 @@ void br_input(void *buffer, uint16_t len)
 	}
 	p->l2_owner = NULL;
 	memcpy(p->payload, buffer, len);
-
-	/* full packet send to tcpip_thread to process */
-	if (br->input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
-		pbuf_free(p);
-	}
-
 #else
 	p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
 	if (p == NULL)
@@ -211,14 +214,14 @@ void br_input(void *buffer, uint16_t len)
 	p->payload = buffer;
 	p->l2_owner = &br;
 	p->l2_buf = buffer;
+#endif
 
 	/* full packet send to tcpip_thread to process */
 	if (br.input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+		LWIP_DEBUGF(NETIF_DEBUG, ("br_input: IP input error\n"));
 		p->l2_owner = NULL;
 		pbuf_free(p);
 	}
-#endif
 }
 
 static err_t br_output(struct netif *netif, struct pbuf *p)
@@ -255,7 +258,7 @@ static err_t br_if_init(struct netif *netif)
 	 * The last argument should be replaced with your link speed, in units
 	 * of bits per second.
 	 */
-	MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, 100000000);
+	MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, 100);
 
 	netif->name[0] = 'b' ;
 	netif->name[1] = 'r' ;
@@ -362,9 +365,9 @@ void br_iniz(void)
 	IP4_ADDR(&br_gw, 0,0,0,0) ;
 
 #if 1
-    IP4_ADDR(&br_ip, 10,10,10,1) ;
+    IP4_ADDR(&br_ip, 10, 1, 1, 1) ;
 #else
-    IP4_ADDR(&br_ip, 169,254,10,1) ;
+    IP4_ADDR(&br_ip, 169, 254, 1, 1) ;
 #endif
     // Comunque il dhcps fornisce questa maschera
     IP4_ADDR(&br_msk, 255,255,255,0) ;
@@ -387,4 +390,34 @@ bool br_valido(void)
 		valido = false ;
 
 	return valido ;
+}
+
+void br_pkt(UN_PKT * pP)
+{
+	switch (pP->tipo) {
+	case DA_ETH: {
+			if (ap_tx()) {
+				esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4) ;
+				stampa_eth("ETH -> WiFi", pP->msg, pP->len - 4) ;
+			}
+
+			br_input(pP->msg, pP->len - 4) ;
+
+			esp_eth_free_rx_buf(pP->msg) ;
+		}
+		break ;
+	case DA_WIFI: {
+			if (eth_tx) {
+				esp_eth_tx(pP->msg, pP->len);
+				stampa_eth("WiFi -> ETH", pP->msg, pP->len);
+			}
+
+			br_input(pP->msg, pP->len) ;
+
+			esp_wifi_internal_free_rx_buffer(pP->eb) ;
+		}
+		break ;
+	}
+
+	pkt_free(pP) ;
 }

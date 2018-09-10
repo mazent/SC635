@@ -257,28 +257,7 @@ void app_main()
 				break ;
 			default: {
 					UN_PKT * pP = event.value.p ;
-					switch (pP->tipo) {
-					case DA_ETH: {
-							if (wifi_is_connected) {
-								esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4) ;
-								stampa_eth("ETH -> WiFi", pP->msg, pP->len - 4) ;
-							}
-
-							br_input(pP->msg, pP->len - 4) ;
-						}
-						break ;
-					case DA_WIFI: {
-							if (ethernet_is_connected) {
-								esp_eth_tx(pP->msg, pP->len);
-								stampa_eth("WiFi -> ETH", pP->msg, pP->len);
-							}
-
-							br_input(pP->msg, pP->len) ;
-						}
-						break ;
-					}
-
-					pkt_free(pP) ;
+					br_pkt(pP) ;
 				}
 				break ;
     		}
