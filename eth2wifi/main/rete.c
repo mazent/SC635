@@ -1,3 +1,4 @@
+#include "conf.h"
 #include "rete.h"
 
 #include "eth_phy/phy_lan8720.h"
@@ -31,7 +32,7 @@ static uint16_t gira(uint16_t val)
 
 void stampa_eth(const char * t, const uint8_t * p, int dim)
 {
-#if 0
+#if STAMPA_ETH == 1
 	ETH_FRAME * pF = (ETH_FRAME *) p ;
 	const char * tipo = NULL ;
 	uint16_t et = gira(pF->type) ;
@@ -93,6 +94,15 @@ void pkt_free(UN_PKT * p)
 
 static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 {
+#if COME_ESEMPIO == 1
+	if (eth_tx()) {
+		//stampa_eth("task -> ETH", pP->msg, pP->len) ;
+		esp_eth_tx(buffer, len);
+	}
+
+	esp_wifi_internal_free_rx_buffer(eb) ;
+
+#else
 	bool inviato = false ;
 
 	if (len > 0) {
@@ -106,8 +116,10 @@ static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 				ESP_LOGE(TAG, "wifi non inviato!!!") ;
 				pkt_free(pP) ;
 			}
-			else
+			else {
 				inviato = true ;
+				stampa_eth("WiFi -> task", buffer, len) ;
+			}
 		}
 	    else
 	    	ESP_LOGE(TAG, "wifi malloc!!!") ;
@@ -117,7 +129,7 @@ static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 
 	if (!inviato)
 		esp_wifi_internal_free_rx_buffer(eb);
-
+#endif
     return ESP_OK;
 }
 
@@ -192,8 +204,10 @@ static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 				ESP_LOGE(TAG, "eth non inviato!!!") ;
 				pkt_free(pP) ;
 			}
-			else
+			else {
 				inviato = true ;
+				stampa_eth("ETH -> task", buffer, len) ;
+			}
 		}
 	    else
 	    	ESP_LOGE(TAG, "eth malloc!!!") ;
@@ -440,8 +454,8 @@ void br_pkt(UN_PKT * pP)
 	switch (pP->tipo) {
 	case DA_ETH: {
 			if (ap_tx()) {
+				stampa_eth("task -> WiFi", pP->msg, pP->len - 4) ;
 				esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4) ;
-				stampa_eth("ETH -> WiFi", pP->msg, pP->len - 4) ;
 			}
 
 			//br_input(pP->msg, pP->len - 4) ;
@@ -451,8 +465,8 @@ void br_pkt(UN_PKT * pP)
 		break ;
 	case DA_WIFI: {
 			if (eth_tx()) {
+				stampa_eth("task -> ETH", pP->msg, pP->len) ;
 				esp_eth_tx(pP->msg, pP->len);
-				stampa_eth("WiFi -> ETH", pP->msg, pP->len);
 			}
 
 			//br_input(pP->msg, pP->len) ;

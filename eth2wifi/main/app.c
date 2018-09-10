@@ -11,6 +11,8 @@
  */
 #include <string.h>
 
+#include "conf.h"
+
 #include "rete.h"
 
 #include "freertos/FreeRTOS.h"
@@ -208,38 +210,14 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 }
 
 
-void app_main()
+static void mainThd(void * v)
 {
-	esp_log_level_set("*", ESP_LOG_INFO) ;
-	
-    ESP_ERROR_CHECK(nvs_flash_init());
-	
-	CHECK_IT( PHY_beg() ) ;
-
-	CHECK_IT( MOBD_beg() ) ;
-	// collego maschio obd a eth
-	MOBD_mobd_eth(true) ;
-	// collego eth al micro
-	MOBD_eth_esp32(true) ;
-
-	{
-		uint8_t mac[6] = {0} ;
-
-	    esp_efuse_mac_get_default(mac) ;
-
-	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
-	}
-
-	// Scambio messaggi
-	comes = osMessageCreate(osMessageQ(comes), NULL) ;
-	assert(comes) ;
-
     esp_event_loop_init(event_handler, NULL);
 
     eth_iniz() ;
 
     ap_iniz() ;
-#if 0
+#if COME_ESEMPIO == 0
     br_iniz() ;
 #endif
     while (true) {
@@ -263,4 +241,34 @@ void app_main()
     		}
     	}
     }
+
+}
+
+void app_main()
+{
+	esp_log_level_set("*", ESP_LOG_INFO) ;
+
+    ESP_ERROR_CHECK(nvs_flash_init());
+
+	CHECK_IT( PHY_beg() ) ;
+
+	CHECK_IT( MOBD_beg() ) ;
+	// collego maschio obd a eth
+	MOBD_mobd_eth(true) ;
+	// collego eth al micro
+	MOBD_eth_esp32(true) ;
+
+	{
+		uint8_t mac[6] = {0} ;
+
+	    esp_efuse_mac_get_default(mac) ;
+
+	    ESP_LOGI(TAG, "base MAC: %02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(mac)) ;
+	}
+
+	// Scambio messaggi
+	comes = osMessageCreate(osMessageQ(comes), NULL) ;
+	assert(comes) ;
+
+	xTaskCreate(mainThd, "mainThd", 2048, NULL, (tskIDLE_PRIORITY + 2), NULL);
 }
