@@ -15,10 +15,7 @@ static const char * TAG = "rete";
 
 void stampa_eth(const char * t, const uint8_t * p, int dim)
 {
-	if (NULL == t)
-		t = "" ;
-
-#if 1
+#if 0
 	ETH_FRAME * pF = (ETH_FRAME *) p ;
 	const char * tipo = NULL ;
 	uint16_t et = gira(pF->type) ;
@@ -56,15 +53,16 @@ static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 		UN_PKT * pP = pkt_malloc(len) ;
 		if (pP) {
 			pP->tipo = DA_WIFI ;
-			pP->len = len ;
 			pP->eb = eb ;
 			memcpy(pP->msg, buffer, len) ;
 			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "wifi non inviato!!!") ;
 				pkt_free(pP) ;
 			}
-			else
+			else {
 				inviato = true ;
+				//ESP_LOGI(TAG, "pP, eb = %p, %p ->", pP, eb) ;
+			}
 		}
 	    else
 	    	ESP_LOGE(TAG, "wifi malloc!!!") ;
@@ -143,7 +141,6 @@ static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 		UN_PKT * pP = pkt_malloc(len) ;
 		if (pP) {
 			pP->tipo = DA_ETH ;
-			pP->len = len ;
 			memcpy(pP->msg, buffer, len) ;
 			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "eth non inviato!!!") ;
@@ -407,12 +404,16 @@ void br_pkt(UN_PKT * pP)
 		}
 		break ;
 	case DA_WIFI: {
-			if (eth_tx) {
+			//ESP_LOGI(TAG, "1 -> pP, eb = %p, %p", pP, pP->eb) ;
+
+			if (eth_tx()) {
 				esp_eth_tx(pP->msg, pP->len);
 				stampa_eth("WiFi -> ETH", pP->msg, pP->len);
 			}
 
 			br_input(pP->msg, pP->len) ;
+
+			//ESP_LOGI(TAG, "2 -> pP, eb = %p, %p", pP, pP->eb) ;
 
 			esp_wifi_internal_free_rx_buffer(pP->eb) ;
 		}

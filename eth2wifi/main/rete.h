@@ -13,17 +13,22 @@ typedef struct {
     } tipo ;
 
     void * eb ;
-
+    uint8_t * msg ;
     uint16_t len ;
-
-    uint8_t msg[1] ;
 } UN_PKT ;
 
 static inline UN_PKT * pkt_malloc(size_t x)
 {
-	size_t dim = x + sizeof(UN_PKT) - 1 ;
+	size_t dim = x + sizeof(UN_PKT) + 100 ;
+	UN_PKT * p = os_malloc(dim) ;
 
-	return os_malloc(dim) ;
+	if (p) {
+		p->eb = NULL ;
+		p->msg = (uint8_t *) (p + 1) ;
+		p->len = x ;
+	}
+
+	return p ;
 }
 
 static inline void pkt_free(UN_PKT * p)
