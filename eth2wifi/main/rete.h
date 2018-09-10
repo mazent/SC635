@@ -17,46 +17,14 @@ typedef struct {
     uint16_t len ;
 } UN_PKT ;
 
-static inline UN_PKT * pkt_malloc(size_t x)
-{
-	size_t dim = x + sizeof(UN_PKT) + 100 ;
-	UN_PKT * p = os_malloc(dim) ;
-
-	if (p) {
-		p->eb = NULL ;
-		p->msg = (uint8_t *) (p + 1) ;
-		p->len = x ;
-	}
-
-	return p ;
-}
-
-static inline void pkt_free(UN_PKT * p)
-{
-	os_free(p) ;
-}
+UN_PKT * pkt_malloc(size_t x) ;
+void pkt_free(UN_PKT * p) ;
 
 typedef struct {
 	uint8_t dst[6] ;
 	uint8_t srg[6] ;
 	uint16_t type ;
 } ETH_FRAME ;
-
-static inline uint16_t gira(uint16_t val)
-{
-	union {
-		uint16_t x ;
-		uint8_t b[2] ;
-	} u ;
-	uint8_t tmp ;
-
-	u.x = val ;
-	tmp = u.b[0] ;
-	u.b[0] = u.b[1] ;
-	u.b[1] = tmp ;
-
-	return u.x ;
-}
 
 void stampa_eth(const char * t, const uint8_t * p, int dim) ;
 

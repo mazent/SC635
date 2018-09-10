@@ -13,6 +13,22 @@
 
 static const char * TAG = "rete";
 
+static uint16_t gira(uint16_t val)
+{
+	union {
+		uint16_t x ;
+		uint8_t b[2] ;
+	} u ;
+	uint8_t tmp ;
+
+	u.x = val ;
+	tmp = u.b[0] ;
+	u.b[0] = u.b[1] ;
+	u.b[1] = tmp ;
+
+	return u.x ;
+}
+
 void stampa_eth(const char * t, const uint8_t * p, int dim)
 {
 #if 0
@@ -43,6 +59,36 @@ void stampa_eth(const char * t, const uint8_t * p, int dim)
 #endif
 }
 
+UN_PKT * pkt_malloc(size_t x)
+{
+	UN_PKT * p = os_malloc(sizeof(UN_PKT)) ;
+
+	if (p) {
+		p->eb = NULL ;
+		p->msg = NULL ;
+		p->len = x ;
+	}
+
+	return p ;
+
+//	size_t dim = x + sizeof(UN_PKT) ;
+//	UN_PKT * p = os_malloc(dim) ;
+//
+//	if (p) {
+//		p->eb = NULL ;
+//		p->msg = (uint8_t *) (p + 1) ;
+//		p->len = x ;
+//	}
+//
+//	return p ;
+}
+
+void pkt_free(UN_PKT * p)
+{
+	os_free(p) ;
+}
+
+
 // ========= WIFI =============================================================
 
 static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
@@ -54,15 +100,14 @@ static esp_err_t wifi_tcpip_input(void* buffer, uint16_t len, void* eb)
 		if (pP) {
 			pP->tipo = DA_WIFI ;
 			pP->eb = eb ;
-			memcpy(pP->msg, buffer, len) ;
+			//memcpy(pP->msg, buffer, len) ;
+			pP->msg = buffer ;
 			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "wifi non inviato!!!") ;
 				pkt_free(pP) ;
 			}
-			else {
+			else
 				inviato = true ;
-				//ESP_LOGI(TAG, "pP, eb = %p, %p ->", pP, eb) ;
-			}
 		}
 	    else
 	    	ESP_LOGE(TAG, "wifi malloc!!!") ;
@@ -141,7 +186,8 @@ static esp_err_t eth_tcpip_input(void* buffer, uint16_t len, void* eb)
 		UN_PKT * pP = pkt_malloc(len) ;
 		if (pP) {
 			pP->tipo = DA_ETH ;
-			memcpy(pP->msg, buffer, len) ;
+//			memcpy(pP->msg, buffer, len) ;
+			pP->msg = buffer ;
 			if (osOK != osMessagePut(comes, (uint32_t) pP, 0)) {
 				ESP_LOGE(TAG, "eth non inviato!!!") ;
 				pkt_free(pP) ;
@@ -398,22 +444,18 @@ void br_pkt(UN_PKT * pP)
 				stampa_eth("ETH -> WiFi", pP->msg, pP->len - 4) ;
 			}
 
-			br_input(pP->msg, pP->len - 4) ;
+			//br_input(pP->msg, pP->len - 4) ;
 
 			esp_eth_free_rx_buf(pP->msg) ;
 		}
 		break ;
 	case DA_WIFI: {
-			//ESP_LOGI(TAG, "1 -> pP, eb = %p, %p", pP, pP->eb) ;
-
 			if (eth_tx()) {
 				esp_eth_tx(pP->msg, pP->len);
 				stampa_eth("WiFi -> ETH", pP->msg, pP->len);
 			}
 
-			br_input(pP->msg, pP->len) ;
-
-			//ESP_LOGI(TAG, "2 -> pP, eb = %p, %p", pP, pP->eb) ;
+			//br_input(pP->msg, pP->len) ;
 
 			esp_wifi_internal_free_rx_buffer(pP->eb) ;
 		}
