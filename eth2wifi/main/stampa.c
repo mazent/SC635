@@ -1,17 +1,6 @@
 #include "bsp.h"
-#include "cfg.h"
+#include "conf.h"
 
-#ifndef STAMPA_REGISTRI
-#	define STAMPA_REGISTRI		0
-#endif
-
-#ifndef STAMPA_WIFI
-#	define STAMPA_WIFI		0
-#endif
-
-#ifndef STAMPA_ETH
-#	define STAMPA_ETH		0
-#endif
 
 #define STAMPA_FRAME 		(STAMPA_WIFI + STAMPA_ETH)
 

@@ -18,6 +18,15 @@
 #include "eth_phy/phy_lan8720.h"
 
 
+#include "esp_wifi_internal.h"
+#include "lwip/netif.h"
+#include "lwip/tcpip.h"
+#include "lwip/snmp.h"
+#include "netif/etharp.h"
+#include "lwip/ethip6.h"
+#include "lwip/dhcp.h"
+
+
 #define PIN_SMI_MDC   23
 #define PIN_SMI_MDIO  18
 
@@ -179,7 +188,7 @@ static void br_input(void *buffer, uint16_t len)
 		return;
 
 	if (ip_addr_cmp(&br.ip_addr, &ip_addr_any)) {
-		ESP_LOGI(TAG, "! br_input: ip nullo !") ;
+		//ESP_LOGI(TAG, "! br_input: ip nullo !") ;
 		return ;
 	}
 
@@ -215,12 +224,12 @@ static err_t br_output(struct netif *netif, struct pbuf *p)
 {
 	int conta = 0 ;
 
-	if (ap_tx()) {
+	if (wifi_is_connected) {
 		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len) ;
 		++conta ;
 	}
 
-	if (eth_tx()) {
+	if (ethernet_is_connected) {
 		esp_eth_tx(p->payload, p->len) ;
 		++conta ;
 	}
@@ -265,7 +274,7 @@ static err_t br_if_init(struct netif *netif)
 	netif->hwaddr_len = ETHARP_HWADDR_LEN;
 
 	/* set MAC hardware address */
-#if 1
+#if 0
 	netif->hwaddr[0] = 0xAA ;
 	netif->hwaddr[1] = 0xBB ;
 	netif->hwaddr[2] = 0xCC ;
@@ -323,7 +332,7 @@ static void dhcp_cb(struct netif * nif)
 #endif
 
 		// Avviso
-		CHECK_IT(osOK == osMessagePut(comes, MSG_BRIP, 0)) ;
+		//CHECK_IT(osOK == osMessagePut(comes, MSG_BRIP, 0)) ;
 
 	} while (false) ;
 }
@@ -359,7 +368,7 @@ static void br_iniz(void)
 
 	IP4_ADDR(&br_gw, 0,0,0,0) ;
 
-#if 1
+#if 0
     IP4_ADDR(&br_ip, 10, 1, 1, 1) ;
 #else
     IP4_ADDR(&br_ip, 169, 254, 1, 1) ;
