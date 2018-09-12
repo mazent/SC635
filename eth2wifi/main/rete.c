@@ -142,7 +142,7 @@ void ap_iniz(void)
 
     wifi_config_t wifi_config = {
         .ap = {
-        	.channel = 9,
+        	//.channel = 9,
             .max_connection = 1,
             .authmode = WIFI_AUTH_OPEN
         }
@@ -159,9 +159,9 @@ void ap_iniz(void)
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
-#if CONFIG_MEZZA_BANDA
-    ESP_ERROR_CHECK(ESP_OK != esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20)) ;
-#endif
+//#if CONFIG_MEZZA_BANDA
+//    ESP_ERROR_CHECK(ESP_OK != esp_wifi_set_bandwidth(ESP_IF_WIFI_AP, WIFI_BW_HT20)) ;
+//#endif
 
     esp_wifi_start() ;
 }
@@ -414,6 +414,7 @@ void br_iniz(void)
 	netif_set_up(&br) ;
 	netif_set_link_up(&br);
 #if 0
+	ESP_LOGI(TAG, "br_iniz dhcp client") ;
 	dhcp_start(&br) ;
 	dhcp_set_cb(&br, dhcp_cb);
 #else
@@ -431,6 +432,7 @@ void br_iniz(void)
     netif_set_addr(&br, &br_ip, &br_msk, &br_gw) ;
 
     dhcps_set_new_lease_cb(dhcps_cb) ;
+    ESP_LOGI(TAG, "br_iniz dhcp server") ;
     dhcps_start(&br, br_ip) ;
 #endif
 }
@@ -457,9 +459,9 @@ void br_pkt(UN_PKT * pP)
 				stampa_eth("task -> WiFi", pP->msg, pP->len - 4) ;
 				esp_wifi_internal_tx(ESP_IF_WIFI_AP, pP->msg, pP->len - 4) ;
 			}
-
-			//br_input(pP->msg, pP->len - 4) ;
-
+#if COME_ESEMPIO == 0
+			br_input(pP->msg, pP->len - 4) ;
+#endif
 			esp_eth_free_rx_buf(pP->msg) ;
 		}
 		break ;
@@ -468,9 +470,9 @@ void br_pkt(UN_PKT * pP)
 				stampa_eth("task -> ETH", pP->msg, pP->len) ;
 				esp_eth_tx(pP->msg, pP->len);
 			}
-
-			//br_input(pP->msg, pP->len) ;
-
+#if COME_ESEMPIO == 0
+			br_input(pP->msg, pP->len) ;
+#endif
 			esp_wifi_internal_free_rx_buffer(pP->eb) ;
 		}
 		break ;

@@ -1,8 +1,13 @@
 #ifndef CONF_H_
 #define CONF_H_
 
-#define STAMPA_ETH			0
+#ifndef STAMPA_ETH
+#	define STAMPA_ETH		0
+#endif
 
-#define COME_ESEMPIO		1
+
+#ifndef COME_ESEMPIO
+#	define COME_ESEMPIO		0
+#endif
 
 #endif

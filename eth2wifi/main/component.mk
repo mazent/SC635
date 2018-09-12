@@ -12,3 +12,6 @@ versione.h:
 
 $(call compile_only_if,$(CONFIG_USA_MS),appv.o)
 $(call compile_only_if_not,$(CONFIG_USA_MS),app.o)
+
+# CPPFLAGS += -DLWIP_NETIF_STATUS_CALLBACK=1
+CPPFLAGS += -DCOME_ESEMPIO=0
