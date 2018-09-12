@@ -32,16 +32,27 @@
 
 static const char * TAG = "bridge";
 
+
+typedef enum {
+	DA_ETH,
+	DA_WIFI,
+	DA_BR,
+	E_WIFI_CONN,
+	E_WIFI_DISC,
+	E_ETH_CONN,
+	E_ETH_DISC
+} TIPO_MSG ;
+
 typedef struct {
     void* buffer;
     uint16_t len;
     void* eb;
-    bool eth ;
+    TIPO_MSG tipo ;
 } tcpip_adapter_eth_input_t;
 
 static xQueueHandle eth_queue_handle;
-static bool wifi_is_connected = false;
-static bool ethernet_is_connected = false;
+//static bool wifi_is_connected = false;
+//static bool ethernet_is_connected = false;
 
 // ========= ETHERNET =========================================================
 
@@ -62,7 +73,9 @@ static void eth_gpio_config_rmii(void)
 static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg;
+	    tcpip_adapter_eth_input_t msg = {
+	    	.tipo = DA_ETH
+	    } ;
 
 	    msg.buffer = malloc(len);
 	    if (msg.buffer) {
@@ -70,13 +83,11 @@ static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, 
 
 		    msg.len = len;
 		    msg.eb = eb;
-		    msg.eth = true ;
 
 		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
 		    	ESP_LOGE(TAG, "eth non inviato!!!") ;
 		    	free(msg.buffer) ;
 		    }
-
 	    }
 	    else
 	    	ESP_LOGE(TAG, "eth malloc!!!") ;
@@ -104,17 +115,10 @@ static void initialise_ethernet(void)
 
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
-#if 0
-    if (ethernet_is_connected) {
-    	stampa_wifi(buffer, len) ;
-
-        esp_eth_tx(buffer, len);
-    }
-
-    esp_wifi_internal_free_rx_buffer(eb);
-#else
 	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg;
+	    tcpip_adapter_eth_input_t msg {
+	    	.tipo = DA_WIFI
+	    } ;
 
 	    msg.buffer = malloc(len);
 	    if (msg.buffer) {
@@ -122,7 +126,6 @@ static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len,
 
 		    msg.len = len;
 		    msg.eb = eb;
-		    msg.eth = false ;
 
 		    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
 		    	ESP_LOGE(TAG, "wifi non inviato!!!") ;
@@ -135,7 +138,7 @@ static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len,
 	}
 
 	esp_wifi_internal_free_rx_buffer(eb);
-#endif
+
     return ESP_OK;
 }
 
@@ -222,21 +225,38 @@ static void br_input(void *buffer, uint16_t len)
 
 static err_t br_output(struct netif *netif, struct pbuf *p)
 {
-	int conta = 0 ;
+    tcpip_adapter_eth_input_t msg = {
+    	.tipo = DA_BR,
+    	.len = p->len
+    } ;
 
-	if (wifi_is_connected) {
-		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len) ;
-		++conta ;
-	}
+    msg.buffer = malloc(p->len);
+    if (msg.buffer) {
+    	memcpy(msg.buffer, p->payload, p->len) ;
 
-	if (ethernet_is_connected) {
-		esp_eth_tx(p->payload, p->len) ;
-		++conta ;
-	}
+	    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
+	    	ESP_LOGE(TAG, "br out non inviato!!!") ;
+	    	free(msg.buffer) ;
+	    }
+    }
+    else
+    	ESP_LOGE(TAG, "br out malloc!!!") ;
 
-	if (conta) {
-		//stampa_eth("br_output", p->payload, p->len) ;
-	}
+//	int conta = 0 ;
+//
+//	if (wifi_is_connected) {
+//		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len) ;
+//		++conta ;
+//	}
+//
+//	if (ethernet_is_connected) {
+//		esp_eth_tx(p->payload, p->len) ;
+//		++conta ;
+//	}
+//
+//	if (conta) {
+//		//stampa_eth("br_output", p->payload, p->len) ;
+//	}
 
 	return ERR_OK;
 }
@@ -389,6 +409,18 @@ static void br_fine(void)
 	netif_set_down(&br) ;
 }
 
+static void invia_msg(TIPO_MSG t)
+{
+	tcpip_adapter_eth_input_t msg {
+		.tipo = t
+	} ;
+
+    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
+    	ESP_LOGE(TAG, "msg non inviato!!!") ;
+    }
+}
+
+
 static esp_err_t event_handler(void* ctx, system_event_t* event)
 {
     switch (event->event_id) {
@@ -432,38 +464,39 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
         case SYSTEM_EVENT_AP_STACONNECTED:
             printf("SYSTEM_EVENT_AP_STACONNECTED\r\n");
-            wifi_is_connected = true;
-
-            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
+//            wifi_is_connected = true;
+//
+//            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
+//            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
+            invia_msg(E_WIFI_CONN) ;
             break;
 
         case SYSTEM_EVENT_AP_STADISCONNECTED:
             printf("SYSTEM_EVENT_AP_STADISCONNECTED\r\n");
-            wifi_is_connected = false;
-            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+//            wifi_is_connected = false;
+//            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+            invia_msg(E_WIFI_DISC) ;
             break;
 
         case SYSTEM_EVENT_ETH_CONNECTED:
             printf("SYSTEM_EVENT_ETH_CONNECTED\r\n");
-            ethernet_is_connected = true;
-			{
-				uint8_t mac[6] = {0} ;
-				esp_eth_get_mac(mac) ;
-				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
-
-				stampa_registri() ;
-			}
-
-			//esp_wifi_start();
+//            ethernet_is_connected = true;
+//			{
+//				uint8_t mac[6] = {0} ;
+//				esp_eth_get_mac(mac) ;
+//				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
+//
+//				stampa_registri() ;
+//			}
+            invia_msg(E_ETH_CONN) ;
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
             printf("SYSTEM_EVENT_ETH_DISCONNECTED\r\n");
 
-            ethernet_is_connected = false;
+//            ethernet_is_connected = false;
 
-            //esp_wifi_stop();
+            invia_msg(E_ETH_DISC) ;
             break;
 
         default:
@@ -495,26 +528,62 @@ void BR_start(void)
 
     // Bridge
     tcpip_adapter_eth_input_t msg;
+    int wifi_stations = 0 ;
+    bool ethernet_is_connected = false;
 
     while (true) {
     	if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
-    		if (msg.eth) {
+    		switch (msg.tipo) {
+    		case DA_ETH:
     			stampa_eth(msg.buffer, msg.len - 4) ;
 
-    			if (wifi_is_connected)
+    			if (wifi_stations)
     				esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.buffer, msg.len - 4);
 
     			br_input(msg.buffer, msg.len - 4) ;
-    		}
-    		else {
+    			break ;
+    		case DA_WIFI:
     			stampa_wifi(msg.buffer, msg.len) ;
 
     		    if (ethernet_is_connected)
     		        esp_eth_tx(msg.buffer, msg.len);
 
     		    br_input(msg.buffer, msg.len) ;
+    		    break ;
+    		case DA_BR:
+				if (wifi_stations)
+					esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.buffer, msg.len) ;
+
+				if (ethernet_is_connected)
+					esp_eth_tx(msg.buffer, msg.len) ;
+    			break ;
+			case E_WIFI_CONN:
+				++wifi_stations ;
+				if (1 == wifi_stations)
+					esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
+				break ;
+			case E_WIFI_DISC:
+				--wifi_stations ;
+				if (0 == wifi_stations)
+					esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+				break ;
+			case E_ETH_CONN:
+				ethernet_is_connected = true ;
+				{
+					uint8_t mac[6] = {0} ;
+					esp_eth_get_mac(mac) ;
+					ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
+
+					stampa_registri() ;
+				}
+				break ;
+			case E_ETH_DISC:
+				ethernet_is_connected = false ;
+				break ;
     		}
-    		free(msg.buffer) ;
+
+    		if (msg.buffer)
+    			free(msg.buffer) ;
     	}
     }
 }
