@@ -17,6 +17,11 @@
 #	define BRIDGE_DHCP_CLN		1
 #endif
 
+// se si usa il dhcp server, che tipo di indirizzi
+#ifndef BRIDGE_DHCPS_AUTOIP
+#	define BRIDGE_DHCPS_AUTOIP		0
+#endif
+
 // quando ethernet e' connessa, stampa i registri dell'8720
 #ifndef STAMPA_REGISTRI
 #	define STAMPA_REGISTRI		0

@@ -51,8 +51,7 @@ typedef struct {
 } tcpip_adapter_eth_input_t;
 
 static xQueueHandle eth_queue_handle;
-//static bool wifi_is_connected = false;
-//static bool ethernet_is_connected = false;
+
 
 // ========= ETHERNET =========================================================
 
@@ -116,7 +115,7 @@ static void initialise_ethernet(void)
 static esp_err_t tcpip_adapter_wifi_input_eth_output(void* buffer, uint16_t len, void* eb)
 {
 	if (len > 0) {
-	    tcpip_adapter_eth_input_t msg {
+	    tcpip_adapter_eth_input_t msg = {
 	    	.tipo = DA_WIFI
 	    } ;
 
@@ -241,22 +240,6 @@ static err_t br_output(struct netif *netif, struct pbuf *p)
     }
     else
     	ESP_LOGE(TAG, "br out malloc!!!") ;
-
-//	int conta = 0 ;
-//
-//	if (wifi_is_connected) {
-//		esp_wifi_internal_tx(ESP_IF_WIFI_AP, p->payload, p->len) ;
-//		++conta ;
-//	}
-//
-//	if (ethernet_is_connected) {
-//		esp_eth_tx(p->payload, p->len) ;
-//		++conta ;
-//	}
-//
-//	if (conta) {
-//		//stampa_eth("br_output", p->payload, p->len) ;
-//	}
 
 	return ERR_OK;
 }
@@ -388,7 +371,7 @@ static void br_iniz(void)
 
 	IP4_ADDR(&br_gw, 0,0,0,0) ;
 
-#if 0
+#if BRIDGE_DHCPS_AUTOIP == 0
     IP4_ADDR(&br_ip, 10, 1, 1, 1) ;
 #else
     IP4_ADDR(&br_ip, 169, 254, 1, 1) ;
@@ -411,7 +394,7 @@ static void br_fine(void)
 
 static void invia_msg(TIPO_MSG t)
 {
-	tcpip_adapter_eth_input_t msg {
+	tcpip_adapter_eth_input_t msg = {
 		.tipo = t
 	} ;
 
@@ -464,37 +447,24 @@ static esp_err_t event_handler(void* ctx, system_event_t* event)
 
         case SYSTEM_EVENT_AP_STACONNECTED:
             printf("SYSTEM_EVENT_AP_STACONNECTED\r\n");
-//            wifi_is_connected = true;
-//
-//            //esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, (wifi_rxcb_t)tcpip_adapter_ap_input_eth_output);
-//            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, tcpip_adapter_wifi_input_eth_output);
+
             invia_msg(E_WIFI_CONN) ;
             break;
 
         case SYSTEM_EVENT_AP_STADISCONNECTED:
             printf("SYSTEM_EVENT_AP_STADISCONNECTED\r\n");
-//            wifi_is_connected = false;
-//            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+
             invia_msg(E_WIFI_DISC) ;
             break;
 
         case SYSTEM_EVENT_ETH_CONNECTED:
             printf("SYSTEM_EVENT_ETH_CONNECTED\r\n");
-//            ethernet_is_connected = true;
-//			{
-//				uint8_t mac[6] = {0} ;
-//				esp_eth_get_mac(mac) ;
-//				ESP_LOGI(TAG, "ETH: "MACSTR"", MAC2STR(mac)) ;
-//
-//				stampa_registri() ;
-//			}
+
             invia_msg(E_ETH_CONN) ;
             break;
 
         case SYSTEM_EVENT_ETH_DISCONNECTED:
             printf("SYSTEM_EVENT_ETH_DISCONNECTED\r\n");
-
-//            ethernet_is_connected = false;
 
             invia_msg(E_ETH_DISC) ;
             break;

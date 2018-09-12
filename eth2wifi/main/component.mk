@@ -18,6 +18,7 @@ versione.h:
 # vedi conf.h (che imposta valori predefiniti se mancano le macro)
 CPPFLAGS += -DBRIDGE=1
 CPPFLAGS += -DBRIDGE_DHCP_CLN=0
+CPPFLAGS += -DBRIDGE_DHCPS_AUTOIP=1
 #CPPFLAGS += -DSTAMPA_REGISTRI=1
 #CPPFLAGS += -DSTAMPA_WIFI=1
 #CPPFLAGS += -DSTAMPA_ETH=1
