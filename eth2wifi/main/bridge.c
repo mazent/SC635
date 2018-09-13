@@ -1,6 +1,7 @@
 #include "bsp.h"
 #include "stampa.h"
 #include "conf.h"
+#include "tcpsrv.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -40,7 +41,9 @@ typedef enum {
 	E_WIFI_CONN,
 	E_WIFI_DISC,
 	E_ETH_CONN,
-	E_ETH_DISC
+	E_ETH_DISC,
+	DHCPC_IP,
+	ECO_MSG
 } TIPO_MSG ;
 
 typedef struct {
@@ -52,6 +55,64 @@ typedef struct {
 
 static xQueueHandle eth_queue_handle;
 
+static void invia_msg(TIPO_MSG t)
+{
+	tcpip_adapter_eth_input_t msg = {
+		.tipo = t
+	} ;
+
+    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
+    	ESP_LOGE(TAG, "msg non inviato!!!") ;
+    }
+}
+
+// ========= ECO ==============================================================
+
+static osPoolId mp = NULL ;
+
+static void eco_conn(const char * ip)
+{
+	ESP_LOGI(TAG, "eco connesso a %s", ip) ;
+}
+
+static void eco_msg(TCPSRV_MSG * pM)
+{
+	tcpip_adapter_eth_input_t msg = {
+		.tipo = ECO_MSG,
+		.buffer = pM
+	} ;
+
+    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
+    	ESP_LOGE(TAG, "eco: msg non inviato!!!") ;
+    }
+}
+
+static void eco_scon(void)
+{
+	ESP_LOGI(TAG, "eco disconnesso") ;
+}
+
+static TCPSRV_CFG ecoCfg = {
+	.porta = 7,
+
+	.conn = eco_conn,
+	.msg = eco_msg,
+	.scon = eco_scon
+} ;
+
+static TCP_SRV * ecoSrv = NULL ;
+
+static void inizia_eco(void)
+{
+	if (NULL == mp) {
+		osPoolDef(mp, 100, TCPSRV_MSG) ;
+		mp = osPoolCreate(osPool(mp)) ;
+		assert(mp) ;
+		ecoCfg.mp = mp ;
+	}
+	if (NULL == ecoSrv)
+		ecoSrv = TCPSRV_beg(&ecoCfg) ;
+}
 
 // ========= ETHERNET =========================================================
 
@@ -322,20 +383,9 @@ static void dhcp_cb(struct netif * nif)
 
 		// Nuovo indirizzo!
 		br_addr = nif->ip_addr ;
-#if 1
-		{
-			char ip[20], msk[20], gw[20] ;
-
-			strcpy(ip, ipaddr_ntoa(&nif->ip_addr)) ;
-			strcpy(msk, ipaddr_ntoa(&nif->netmask)) ;
-			strcpy(gw, ipaddr_ntoa(&nif->gw)) ;
-
-			ESP_LOGI(TAG, "BR dhcp_cb %s %s %s", ip, msk, gw) ;
-		}
-#endif
 
 		// Avviso
-		//CHECK_IT(osOK == osMessagePut(comes, MSG_BRIP, 0)) ;
+		invia_msg(DHCPC_IP) ;
 
 	} while (false) ;
 }
@@ -349,9 +399,11 @@ static void dhcps_cb(u8_t client_ip[4])
 
 #endif
 
+#if BRIDGE == 0
+static void br_iniz(void) {}
+#else
 static void br_iniz(void)
 {
-#if BRIDGE > 0
 	if (!ini) {
 		tcpip_init(NULL, NULL) ;
 		ini = true ;
@@ -383,26 +435,16 @@ static void br_iniz(void)
     dhcps_set_new_lease_cb(dhcps_cb) ;
     ESP_LOGI(TAG, "br_iniz dhcp server") ;
     dhcps_start(&br, br_ip) ;
-#endif
+
+    inizia_eco() ;
 #endif
 }
+#endif
 
 static void br_fine(void)
 {
 	netif_set_down(&br) ;
 }
-
-static void invia_msg(TIPO_MSG t)
-{
-	tcpip_adapter_eth_input_t msg = {
-		.tipo = t
-	} ;
-
-    if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
-    	ESP_LOGE(TAG, "msg non inviato!!!") ;
-    }
-}
-
 
 static esp_err_t event_handler(void* ctx, system_event_t* event)
 {
@@ -549,6 +591,29 @@ void BR_start(void)
 				break ;
 			case E_ETH_DISC:
 				ethernet_is_connected = false ;
+				break ;
+			case DHCPC_IP:
+				// Il dhcp client ha ottenuto l'indirizzo
+#if 1
+				{
+					char ip[20], msk[20], gw[20] ;
+
+					strcpy(ip, ipaddr_ntoa(br.ip_addr)) ;
+					strcpy(msk, ipaddr_ntoa(br.netmask)) ;
+					strcpy(gw, ipaddr_ntoa(br.gw)) ;
+
+					ESP_LOGI(TAG, "dhcp ip %s %s %s", ip, msk, gw) ;
+				}
+#endif
+				inizia_eco() ;
+				break ;
+			case ECO_MSG: {
+					TCPSRV_MSG * pM = msg.buffer ;
+					if ( !TCPSRV_tx(ecoSrv, pM->mem, pM->dim) )
+						ESP_LOGE(TAG, "TCPSRV_tx") ;
+					CHECK_IT(osOK == osPoolFree(ecoCfg.mp, pM)) ;
+					msg.buffer = NULL ;
+				}
 				break ;
     		}
 
