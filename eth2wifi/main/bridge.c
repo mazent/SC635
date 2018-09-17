@@ -82,6 +82,7 @@ static void eco_msg(TCPSRV_MSG * pM)
 		.buffer = pM
 	} ;
 
+
     if (xQueueSend(eth_queue_handle, &msg, 0) != pdTRUE) {
     	ESP_LOGE(TAG, "eco: msg non inviato!!!") ;
     }
@@ -239,49 +240,109 @@ static bool ini = false ;
 static struct netif br ;
 static ip_addr_t br_addr ;
 
+#if BRIDGE > 0
+
+/**
+ * Should allocate a pbuf and transfer the bytes of the incoming
+ * packet from the interface into the pbuf.
+ *
+ * @param netif the lwip network interface structure for this ethernetif
+ * @return a pbuf filled with the received packet (including MAC header)
+ *         NULL on memory error
+ */
+static struct pbuf *
+low_level_input(void *buffer, uint16_t len)
+{
+	//struct ethernetif *ethernetif = br.state;
+	struct pbuf *p, *q;
+
+#if ETH_PAD_SIZE
+	len += ETH_PAD_SIZE; /* allow room for Ethernet padding */
+#endif
+
+	/* We allocate a pbuf chain of pbufs from the pool. */
+	p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
+
+	if (p != NULL) {
+#if ETH_PAD_SIZE
+		pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
+#endif
+
+		/* We iterate over the pbuf chain until we have read the entire
+		 * packet into the pbuf. */
+		for (q = p; q != NULL; q = q->next) {
+			/* Read enough bytes to fill this pbuf in the chain. The
+			 * available data in the pbuf is given by the q->len
+			 * variable.
+			 * This does not necessarily have to be a memcpy, you can also preallocate
+			 * pbufs for a DMA-enabled MAC and after receiving truncate it to the
+			 * actually received size. In this case, ensure the tot_len member of the
+			 * pbuf is the sum of the chained pbuf len members.
+			 */
+			memcpy(q->payload, buffer, q->len) ;
+			buffer += q->len ;
+			len -= q->len ;
+		}
+
+#if ETH_PAD_SIZE
+		pbuf_header(p, ETH_PAD_SIZE); /* reclaim the padding word */
+#endif
+
+		LINK_STATS_INC(link.recv);
+	}
+	else {
+		LINK_STATS_INC(link.memerr);
+		LINK_STATS_INC(link.drop);
+	}
+
+	return p;
+}
+
 static void br_input(void *buffer, uint16_t len)
 {
-#if BRIDGE > 0
+	//struct ethernetif *ethernetif;
+	struct eth_hdr *ethhdr;
 	struct pbuf *p;
 
-	if (!ini)
-		return ;
+	//ethernetif = br.state;
 
-	if (buffer == NULL)
-		return;
-
-	if (ip_addr_cmp(&br.ip_addr, &ip_addr_any)) {
-		//ESP_LOGI(TAG, "! br_input: ip nullo !") ;
-		return ;
-	}
-
-	//stampa_eth("??? -> BR", buffer, len) ;
-
-#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
-	if (p == NULL) {
-		return;
-	}
-	p->l2_owner = NULL;
-	memcpy(p->payload, buffer, len);
-#else
-	p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+	/* move received packet into a new pbuf */
+	p = low_level_input(buffer, len);
+	/* no packet could be read, silently ignore this */
 	if (p == NULL)
 		return;
+	/* points to packet payload, which starts with an Ethernet header */
+	ethhdr = p->payload;
 
-	p->payload = buffer;
-	p->l2_owner = &br;
-	p->l2_buf = buffer;
-#endif
+	switch (htons(ethhdr->type)) {
+	/* IP or ARP packet? */
+	case ETHTYPE_IP:
+	case ETHTYPE_IPV6:
+	case ETHTYPE_ARP:
+#if PPPOE_SUPPORT
+		/* PPPoE packet? */
+	case ETHTYPE_PPPOEDISC:
+	case ETHTYPE_PPPOE:
+#endif /* PPPOE_SUPPORT */
+		/* full packet send to tcpip_thread to process */
+		stampa_br(true, buffer, len) ;
+		if (br.input(p, &br)!=ERR_OK) {
+			LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+			pbuf_free(p);
+			p = NULL;
+		}
+		break;
 
-	/* full packet send to tcpip_thread to process */
-	if (br.input(p, &br) != ERR_OK) {
-		LWIP_DEBUGF(NETIF_DEBUG, ("br_input: IP input error\n"));
-		p->l2_owner = NULL;
+	default:
 		pbuf_free(p);
+		p = NULL;
+		break;
 	}
-#endif
 }
+
+#else
+static void br_input(void *buffer, uint16_t len) {}
+#endif
 
 static err_t br_output(struct netif *netif, struct pbuf *p)
 {
@@ -289,6 +350,8 @@ static err_t br_output(struct netif *netif, struct pbuf *p)
     	.tipo = DA_BR,
     	.len = p->len
     } ;
+
+    stampa_br(false, p->payload, p->len) ;
 
     msg.buffer = malloc(p->len);
     if (msg.buffer) {
@@ -547,7 +610,7 @@ void BR_start(void)
     	if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
     		switch (msg.tipo) {
     		case DA_ETH:
-    			stampa_eth(msg.buffer, msg.len - 4) ;
+    			stampa_eth(false, msg.buffer, msg.len - 4) ;
 
     			if (wifi_stations)
     				esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.buffer, msg.len - 4);
@@ -555,7 +618,7 @@ void BR_start(void)
     			br_input(msg.buffer, msg.len - 4) ;
     			break ;
     		case DA_WIFI:
-    			stampa_wifi(msg.buffer, msg.len) ;
+    			stampa_wifi(false, msg.buffer, msg.len) ;
 
     		    if (ethernet_is_connected)
     		        esp_eth_tx(msg.buffer, msg.len);
@@ -598,9 +661,9 @@ void BR_start(void)
 				{
 					char ip[20], msk[20], gw[20] ;
 
-					strcpy(ip, ipaddr_ntoa(br.ip_addr)) ;
-					strcpy(msk, ipaddr_ntoa(br.netmask)) ;
-					strcpy(gw, ipaddr_ntoa(br.gw)) ;
+					strcpy(ip, ipaddr_ntoa(&br.ip_addr)) ;
+					strcpy(msk, ipaddr_ntoa(&br.netmask)) ;
+					strcpy(gw, ipaddr_ntoa(&br.gw)) ;
 
 					ESP_LOGI(TAG, "dhcp ip %s %s %s", ip, msk, gw) ;
 				}
@@ -609,6 +672,7 @@ void BR_start(void)
 				break ;
 			case ECO_MSG: {
 					TCPSRV_MSG * pM = msg.buffer ;
+					//ESP_LOGI(TAG, "task eco di %d byte", pM->dim) ;
 					if ( !TCPSRV_tx(ecoSrv, pM->mem, pM->dim) )
 						ESP_LOGE(TAG, "TCPSRV_tx") ;
 					CHECK_IT(osOK == osPoolFree(ecoCfg.mp, pM)) ;
