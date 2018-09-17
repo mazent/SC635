@@ -12,14 +12,11 @@
 #include "esp_log.h"
 
 #include "esp_eth.h"
+#include "eth_phy/phy_lan8720.h"
 
 #include "esp_wifi.h"
 #include "esp_wifi_internal.h"
 
-#include "eth_phy/phy_lan8720.h"
-
-
-#include "esp_wifi_internal.h"
 #include "lwip/netif.h"
 #include "lwip/tcpip.h"
 #include "lwip/snmp.h"

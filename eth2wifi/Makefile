@@ -7,5 +7,7 @@ PROJECT_NAME := eth2wifi
 
 EXTRA_COMPONENT_DIRS := $(abspath ../bsp)
 
+EXCLUDE_COMPONENTS := fatfs libsodium
+
 include $(IDF_PATH)/make/project.mk
 
