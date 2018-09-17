@@ -133,10 +133,14 @@ static void eth_gpio_config_rmii(void)
 
 static esp_err_t tcpip_adapter_eth_input_sta_output(void* buffer, uint16_t len, void* eb)
 {
-	if (len > 0) {
+	if (len > 4) {
 	    tcpip_adapter_eth_input_t msg = {
 	    	.tipo = DA_ETH
 	    } ;
+
+	    // Non si sa perche'
+	    // https://www.esp32.com/viewtopic.php?f=2&t=7079
+	    len -= 4 ;
 
 	    msg.buffer = malloc(len);
 	    if (msg.buffer) {
@@ -253,7 +257,6 @@ static ip_addr_t br_addr ;
 static struct pbuf *
 low_level_input(void *buffer, uint16_t len)
 {
-	//struct ethernetif *ethernetif = br.state;
 	struct pbuf *p, *q;
 
 #if ETH_PAD_SIZE
@@ -281,7 +284,6 @@ low_level_input(void *buffer, uint16_t len)
 			 */
 			memcpy(q->payload, buffer, q->len) ;
 			buffer += q->len ;
-			len -= q->len ;
 		}
 
 #if ETH_PAD_SIZE
@@ -300,17 +302,16 @@ low_level_input(void *buffer, uint16_t len)
 
 static void br_input(void *buffer, uint16_t len)
 {
-	//struct ethernetif *ethernetif;
 	struct eth_hdr *ethhdr;
 	struct pbuf *p;
 
-	//ethernetif = br.state;
-
 	/* move received packet into a new pbuf */
 	p = low_level_input(buffer, len);
+
 	/* no packet could be read, silently ignore this */
 	if (p == NULL)
 		return;
+
 	/* points to packet payload, which starts with an Ethernet header */
 	ethhdr = p->payload;
 
@@ -610,12 +611,12 @@ void BR_start(void)
     	if (xQueueReceive(eth_queue_handle, &msg, (portTickType)portMAX_DELAY) == pdTRUE) {
     		switch (msg.tipo) {
     		case DA_ETH:
-    			stampa_eth(false, msg.buffer, msg.len - 4) ;
+    			stampa_eth(false, msg.buffer, msg.len) ;
 
     			if (wifi_stations)
-    				esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.buffer, msg.len - 4);
+    				esp_wifi_internal_tx(ESP_IF_WIFI_AP, msg.buffer, msg.len);
 
-    			br_input(msg.buffer, msg.len - 4) ;
+    			br_input(msg.buffer, msg.len) ;
     			break ;
     		case DA_WIFI:
     			stampa_wifi(false, msg.buffer, msg.len) ;
